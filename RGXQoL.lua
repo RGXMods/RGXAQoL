@@ -2340,20 +2340,20 @@
 		end
 	end
 
-	-- Slash command for global function
-	_G.SLASH_RGXQoL1 = "/qol"
-		SlashCmdList["RGXQoL"] = function(self)
-		-- Run slash command function
-		RGXQoLLC:SlashFunc(self)
-		-- Redirect tainted variables
-		RunScript('ACTIVE_CHAT_EDIT_BOX = ACTIVE_CHAT_EDIT_BOX')
-		RunScript('LAST_ACTIVE_CHAT_EDIT_BOX = LAST_ACTIVE_CHAT_EDIT_BOX')
-	end
+	-- Slash commands owned by the framework: one registration path, one
+	-- prefix, one isolated dispatch hop.
+	local RGX = _G.RGXFramework
+	if RGX and RGX.RegisterSlashCommand then
+		RGX:RegisterSlashCommand("qol", function(msg)
+			RGXQoLLC:SlashFunc(msg or "")
+			-- Redirect tainted variables
+			RunScript('ACTIVE_CHAT_EDIT_BOX = ACTIVE_CHAT_EDIT_BOX')
+			RunScript('LAST_ACTIVE_CHAT_EDIT_BOX = LAST_ACTIVE_CHAT_EDIT_BOX')
+		end, "RGXQoL")
 
-	-- Slash command for UI reload
-	_G.SLASH_RGXQO_RL1 = "/rl"
-	SlashCmdList["RGXQO_RL"] = function()
-		ReloadUI()
+		RGX:RegisterSlashCommand("rl", function()
+			ReloadUI()
+		end, "RGXQoL_RELOAD")
 	end
 
 
