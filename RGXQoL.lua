@@ -2446,115 +2446,124 @@
 
 		SyncBridgeFromLegacy()
 
+		-- Framework primitives only: cards, canonical RGX switches, sliders.
+		local function Card(frame, title)
+			local card = UI:CreateCard(frame, { title = title })
+			frame._rgxFlow:Add(card)
+			return card
+		end
+
+		local function Text(card, text)
+			local w = UI:CreateLabel(card.content, {
+				text = text,
+				size = "small",
+				color = "muted",
+				wrap = true,
+			})
+			card.flow:Add(w)
+			return w
+		end
+
+		local function Toggle(card, label, bkey)
+			local w = UI:CreateSwitch(card.content, {
+				label = label,
+				storage = BridgeStore,
+				key = bkey,
+				default = BridgeStore[bkey],
+				onChange = function(value) OnBridgeChange(bkey, value) end,
+			})
+			card.flow:Add(w)
+			return w
+		end
+
+		local function Slider(card, label, bkey, min, max, suffix)
+			local w = UI:CreateSlider(card.content, {
+				label = label,
+				storage = BridgeStore,
+				key = bkey,
+				min = min,
+				max = max,
+				step = 1,
+				default = BridgeStore[bkey],
+				suffix = suffix or "",
+			})
+			card.flow:Add(w)
+			return w
+		end
+
 		local panel = UI:CreateOptionsPanel({
 			addonName = "RGXQoL",
-			title = "RGX QoL",
-			subtitle = "Quality of life enhancements for WoW Forever",
+			title = "RGX | AQoL",
+			subtitle = L["Another Quality of Life"],
 			icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
-			brand = "8B1538",
+			theme = { primary = "8B1538", accent = "ED6B85" },
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
 			author = "RealmGX, derived from Leatrix Plus by Leatrix",
-			width = 760,
-			height = 620,
+			width = 820,
+			height = 640,
+			maxPerRow = 4,
 			tabs = {
 				{
-					text = L["General"],
+					text = L["Character"],
 					content = function(frame)
+						local questing = Card(frame, L["Questing"])
+						Text(questing, L["Quests, gossip and the override key that gates them."])
+						Toggle(questing, L["Automate quests"], "automateQuests")
+						Toggle(questing, L["Accept available quests automatically"], "autoQuestAvailable")
+						Toggle(questing, L["Turn-in completed quests automatically"], "autoQuestCompleted")
+						Toggle(questing, L["Require override key for quest automation"], "autoQuestShift")
+						Slider(questing, L["Override key"] .. " (1=SHIFT 2=ALT 3=CTRL 4=CMD)", "autoQuestKeyMenu", 1, 4, "")
+						Toggle(questing, L["Automate gossip"], "automateGossip")
+						questing:AutoHeight()
 
-						local UI = _G.RGXUI
-						local function CardToggle(card, label, bkey)
-							local w = UI:CreateToggle(card.content, {
-								label = label,
-								storage = BridgeStore,
-								key = bkey,
-								default = BridgeStore[bkey],
-								onChange = function(v) OnBridgeChange(bkey, v) end,
-							})
-							card.flow:Add(w)
-							return w
-						end
-						local function CardSlider(card, label, bkey, min, max, default, suffix)
-							local w = UI:CreateSlider(card.content, {
-								label = label,
-								storage = BridgeStore,
-								key = bkey,
-								min = min or 0,
-								max = max or 100,
-								step = 1,
-								default = default,
-								suffix = suffix or "",
-							})
-							card.flow:Add(w)
-							return w
-						end
-						local function CardText(card, text)
-							local w = UI:CreateLabel(card.content, {
-								text = text,
-								size = "small",
-								color = "muted",
-								wrap = true,
-							})
-							card.flow:Add(w)
-							return w
-						end
+						local automation = Card(frame, L["Automation"])
+						Text(automation, L["Summons, resurrections and releasing your corpse."])
+						Toggle(automation, L["Accept summon"], "autoAcceptSummon")
+						Toggle(automation, L["Accept resurrection"], "autoAcceptRes")
+						Toggle(automation, L["Exclude combat resurrection"], "autoResNoCombat")
+						Toggle(automation, L["Release in PvP"], "autoReleasePvP")
+						Toggle(automation, L["Exclude Alterac Valley"], "autoReleaseNoAlterac")
+						Slider(automation, L["Release delay"] .. " (ms)", "autoReleaseDelay", 200, 3000, "ms")
+						automation:AutoHeight()
+					end,
+				},
+				{
+					text = L["Vendors"],
+					content = function(frame)
+						local vendors = Card(frame, L["Vendors"])
+						Text(vendors, L["Automatic junk selling and gear repair at vendors."])
+						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
+						Toggle(vendors, L["Show vendor summary in chat"], "autoSellShowSummary")
+						Toggle(vendors, L["Repair automatically"], "autoRepairGear")
+						Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
+						vendors:AutoHeight()
+					end,
+				},
+				{
+					text = L["Addon"],
+					content = function(frame)
+						local addon = Card(frame, L["Addon"])
+						Text(addon, L["Minimap button, language and UI reload options."])
+						Toggle(addon, L["Show minimap button"], "showMinimapIcon")
+						Toggle(addon, L["Use English language"], "useEnglishLanguage")
+						addon:AutoHeight()
 
-						-- Character card (issue #19: real bordered card; description keys are
-						-- new L[] entries with English fallback for issue #3 to translate).
-						local charCard = UI:CreateCard(frame, { title = L["Character"] })
-						frame._rgxFlow:Add(charCard)
-						CardText(charCard, L["Questing, gossip, summon and release automation for your character."])
-						CardToggle(charCard, L["Automate quests"], "automateQuests")
-						CardToggle(charCard, L["Accept available quests automatically"], "autoQuestAvailable")
-						CardToggle(charCard, L["Turn-in completed quests automatically"], "autoQuestCompleted")
-						CardToggle(charCard, L["Require override key for quest automation"], "autoQuestShift")
-						CardSlider(charCard, L["Override key"] .. " (1=SHIFT 2=ALT 3=CTRL 4=CMD)", "autoQuestKeyMenu", 1, 4, BridgeStore["autoQuestKeyMenu"] or 1, "")
-						CardToggle(charCard, L["Automate gossip"], "automateGossip")
-						CardToggle(charCard, L["Accept summon"], "autoAcceptSummon")
-						CardToggle(charCard, L["Accept resurrection"], "autoAcceptRes")
-						CardToggle(charCard, L["Exclude combat resurrection"], "autoResNoCombat")
-						CardToggle(charCard, L["Release in PvP"], "autoReleasePvP")
-						CardToggle(charCard, L["Exclude Alterac Valley"], "autoReleaseNoAlterac")
-						CardSlider(charCard, L["Release delay"] .. " (ms)", "autoReleaseDelay", 200, 3000, BridgeStore["autoReleaseDelay"] or 200, "ms")
-						charCard:AutoHeight()
-
-						-- Vendors card
-						local vendCard = UI:CreateCard(frame, { title = L["Vendors"] })
-						frame._rgxFlow:Add(vendCard)
-						CardText(vendCard, L["Automatic junk selling and gear repair at vendors."])
-						CardToggle(vendCard, L["Sell junk automatically"], "autoSellJunk")
-						CardToggle(vendCard, L["Show vendor summary in chat"], "autoSellShowSummary")
-						CardToggle(vendCard, L["Repair automatically"], "autoRepairGear")
-						CardToggle(vendCard, L["Show repair summary in chat"], "autoRepairShowSummary")
-						vendCard:AutoHeight()
-
-						-- Addon card
-						local addonCard = UI:CreateCard(frame, { title = L["Addon"] })
-						frame._rgxFlow:Add(addonCard)
-						CardText(addonCard, L["Minimap button, language and UI reload options."])
-						CardToggle(addonCard, L["Show minimap button"], "showMinimapIcon")
-						CardToggle(addonCard, L["Use English language"], "useEnglishLanguage")
-						addonCard:AutoHeight()
-
-						-- Reload UI button, wired to the reload-needed state and anchored
-						-- to the Addon card content bottom.
 						ReloadButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
 						ReloadButton:SetSize(120, 22)
 						ReloadButton:SetText(L["Reload UI"])
-						ReloadButton:SetPoint("TOPLEFT", addonCard, "BOTTOMLEFT", 0, -8)
+						ReloadButton:SetPoint("TOPLEFT", addon, "BOTTOMLEFT", 0, -8)
 						ReloadButton:SetScript("OnClick", function() ReloadUI() end)
 						ReloadLabel = ReloadButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
 						ReloadLabel:SetPoint("RIGHT", ReloadButton, "LEFT", -10, 0)
 						ReloadLabel:SetText(L["Your UI needs to be reloaded."])
 						ReloadLabel:Hide()
 						RGXQoLLC:ReloadCheck()
-
 					end,
 				},
 			},
 		})
 
 		RGXQoLLC.QoLPanel = panel
-
 
 		OpenOptionsShared = function()
 			if panel and panel.Open then panel:Open() end
