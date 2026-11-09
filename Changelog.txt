@@ -1,3 +1,9 @@
+2.1.0 - 9th November 2026
+- Rebuilt the options panel as three framework tabs - Character, Vendors, Addon - each laid out as card sections, so the addon matches the rest of the RGX family.
+- Toggles render the canonical RGX switch element instead of the old local toggle art.
+- The panel is themed with the RGX crimson brand (8B1538 / ED6B85); the previous build passed its theme in a form the framework ignored, so it rendered in the default palette.
+- Panel title and subtitle follow the new name: RGX | AQoL - Another Quality of Life.
+
 2.0.3 - 9th November 2026
 - Capitalised the brand name: RGX | AQoL.
 - No behaviour changes.

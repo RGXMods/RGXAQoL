@@ -6,7 +6,7 @@ The folder and saved variables are still `RGXQoL`; only the in-game name changed
 
 ## Features
 
-- A single options panel (`/qol`) collecting quality-of-life toggles.
+- A three-tab options panel (`/qol`) built from RGX-Framework pages and cards: Character, Vendors, Addon.
 - Flight-point data for Alliance and Horde routes.
 - Sound muting helpers.
 - Client guards for the WoW Forever (classic beta) API surface.
