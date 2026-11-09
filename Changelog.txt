@@ -1,3 +1,7 @@
+2.0.3 - 9th November 2026
+- Capitalised the brand name: RGX | AQoL.
+- No behaviour changes.
+
 2.0.2 - 9th November 2026
 - Renamed the addon in game to RGX | aQoL (Another Quality of Life). The folder, globals and saved variables stay RGXQoL so existing installs keep their settings.
 - No behaviour changes.
