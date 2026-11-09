@@ -1,3 +1,7 @@
+2.1.1 - 9th November 2026
+- /qol and /rl are registered through RGX:RegisterSlashCommand instead of raw SlashCmdList globals, so the framework owns the prefix and the dispatch hop.
+- No behaviour changes.
+
 2.1.0 - 9th November 2026
 - Rebuilt the options panel as three framework tabs - Character, Vendors, Addon - each laid out as card sections, so the addon matches the rest of the RGX family.
 - Toggles render the canonical RGX switch element instead of the old local toggle art.
