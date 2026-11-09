@@ -1,9 +1,10 @@
 ## Interface: 11509,16001
 
-## Title: |cff8B1538RGX|r |cffffffffQoL|r
-## Notes: Quality of life enhancements for WoW Forever.
+## Title: |cff8B1538RGX|r |cffffffffaQoL|r
+## Notes: Another Quality of Life - quality of life enhancements for WoW Forever and Classic Era.
 
-## Version: 2.0.1
+## Version: 2.0.2
+## X-DisplayName: RGX aQoL
 ## Author: RealmGX, derived from Leatrix Plus by Leatrix
 ## Category: RealmGX
 ## Group: RealmGX
