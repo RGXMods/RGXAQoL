@@ -1,4 +1,4 @@
-# RGX | aQoL
+# RGX | AQoL
 
 **Another Quality of Life** — quality-of-life enhancements for WoW Forever and Classic Era, derived from Leatrix Plus and rebuilt on RGX-Framework.
 
