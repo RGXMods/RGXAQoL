@@ -2497,7 +2497,8 @@
 			title = "RGX | AQoL",
 			subtitle = L["Another Quality of Life"],
 			icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
-			theme = { primary = "8B1538", accent = "ED6B85" },
+			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
+			theme = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.929, 0.420, 0.522 } },
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
 			author = "RealmGX, derived from Leatrix Plus by Leatrix",
 			width = 820,
