@@ -1,3 +1,8 @@
+2.1.2 - 9th November 2026
+- Timers now run through RGX-Framework (RGX:After / RGX:Every) instead of raw C_Timer: the framework budgets, labels and diagnoses them.
+- Auto-follow and the map-taint diagnostic cancel through RGX:CancelTimer.
+- No behaviour changes.
+
 2.1.1 - 9th November 2026
 - /qol and /rl are registered through RGX:RegisterSlashCommand instead of raw SlashCmdList globals, so the framework owns the prefix and the dispatch hop.
 - No behaviour changes.

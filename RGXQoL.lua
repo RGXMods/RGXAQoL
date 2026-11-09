@@ -15,6 +15,7 @@
 	-- Create locals
 	-- Create locals
 	local RGXQoLLC = {}
+	local RGX = assert(_G.RGXFramework, "RGX-Framework is required")
 	RGXQoLLC.FeatureSetup = {}          -- option -> setup hook, wired from feature blocks
 
 	-- WoW Forever beta safety: guarded hook helper for functions this
@@ -64,7 +65,7 @@
 		local gameversion, gamebuild, gamedate, gametocversion = GetBuildInfo()
 		if gametocversion and gametocversion > 19999 then
 			-- Game client is not Wow Classic
-			C_Timer.After(2, function()
+			RGX:After(2, function()
 				print(L["RGX QO: WRONG VERSION INSTALLED!"])
 			end)
 			return
@@ -217,7 +218,7 @@
 					local sName = C_SummonInfo.GetSummonConfirmSummoner()
 					local sLocation = C_SummonInfo.GetSummonConfirmAreaName()
 					RGXQoLLC:Print(L["The summon from"] .. " " .. sName .. " (" .. sLocation .. ") " .. L["will be automatically accepted in 10 seconds unless cancelled."])
-					C_Timer.After(10, function()
+					RGX:After(10, function()
 						local sNameNew = C_SummonInfo.GetSummonConfirmSummoner()
 						local sLocationNew = C_SummonInfo.GetSummonConfirmAreaName()
 						if sName == sNameNew and sLocation == sLocationNew then
@@ -817,12 +818,12 @@
 								ticker._remainingIterations = ticker._remainingIterations - 1
 							end
 							if (not ticker._remainingIterations or ticker._remainingIterations > 0) then
-								C_Timer.After(duration, ticker._callback)
+								RGX:After(duration, ticker._callback)
 							end
 						end
 					end
 				end
-				C_Timer.After(duration, ticker._callback)
+				RGX:After(duration, ticker._callback)
 				return ticker
 			end
 
@@ -1045,7 +1046,7 @@
 					local resTimer = GetCorpseRecoveryDelay()
 					if resTimer and resTimer > 0 then
 						-- Resurrect has a delay so wait before resurrecting
-						C_Timer.After(resTimer + 1, function()
+						RGX:After(resTimer + 1, function()
 							if not UnitAffectingCombat(arg1) or RGXQoLLC["AutoResNoCombat"] == "Off" then
 								if RGXQoLLC["AutoAcceptRes"] == "On" then
 									AcceptResurrect()
@@ -1087,7 +1088,7 @@
 						end
 						-- Release automatically
 						local delay = RGXQoLLC["AutoReleaseDelay"] / 1000
-						C_Timer.After(delay, function()
+						RGX:After(delay, function()
 							local dialog = StaticPopup_Visible("DEATH")
 							if dialog then
 								if IsShiftKeyDown() then
@@ -1154,7 +1155,7 @@
 
 		-- Show first run message
 		if not RGXQoLDB["FirstRunMessageSeen"] then
-			C_Timer.After(1, function()
+			RGX:After(1, function()
 				RGXQoLLC:Print(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open RGX QoL Plus."])
 				RGXQoLDB["FirstRunMessageSeen"] = true
 			end)
@@ -1382,7 +1383,7 @@
 						-- Show quest information
 						local questCompleted = C_QuestLog.IsQuestFlaggedCompleted(arg1)
 						local questTitle = C_QuestLog.GetQuestInfo(arg1) or L["Unknown"]
-						C_Timer.After(0.5, function()
+						RGX:After(0.5, function()
 							local questTitle = C_QuestLog.GetQuestInfo(arg1) or L["Unknown"]
 							if questCompleted then
 								RGXQoLLC:Print(questTitle .. " (" .. arg1 .. "):" .. "|cffffffff " .. L["Completed."])
@@ -1727,7 +1728,7 @@
 				-- Automatically follow player target using ticker
 				if RGXQoLLC.followTick then
 					-- Existing ticker is active so cancel it
-					RGXQoLLC.followTick:Cancel()
+					RGX:CancelTimer(RGXQoLLC.followTick)
 					RGXQoLLC.followTick = nil
 					FollowUnit("player")
 					RGXQoLLC:Print("AutoFollow disabled.")
@@ -1740,10 +1741,10 @@
 					end
 					if targetRealm then targetName = targetName .. "-" .. targetRealm end
 					if RGXQoLLC.followTick then
-						RGXQoLLC.followTick:Cancel()
+						RGX:CancelTimer(RGXQoLLC.followTick)
 					end
 					FollowUnit(targetName, true)
-					RGXQoLLC.followTick = C_Timer.NewTicker(0.5, function()
+					RGXQoLLC.followTick = RGX:Every(0.5, function()
 						FollowUnit(targetName, true)
 					end)
 					RGXQoLLC:Print(L["AutoFollow"] .. ": |cffffffff" .. targetName .. "|r.")
@@ -2082,7 +2083,7 @@
 					local ftype = frame:GetObjectType()
 					if frame and ftype and ftype == "Button" then
 						if arg1 and tonumber(arg1) > 1 and tonumber(arg1) < 1000 then
-							for i =1, tonumber(arg1) do C_Timer.After(0.1 * i, function() frame:Click() end) end
+							for i =1, tonumber(arg1) do RGX:After(0.1 * i, function() frame:Click() end) end
 						else
 							frame:Click()
 						end
@@ -2200,7 +2201,7 @@
 							end
 						end
 						-- Reinvite
-						C_Timer.After(0.1, function()
+						RGX:After(0.1, function()
 							for k, v in pairs(groupNames) do
 								C_PartyInfo.InviteUnit(v)
 							end
@@ -2265,12 +2266,12 @@
 			elseif str == "taintmap" then
 				-- TaintMap
 				if RGXQoLLC.TaintMap then
-					RGXQoLLC.TaintMap:Cancel()
+					RGX:CancelTimer(RGXQoLLC.TaintMap)
 					RGXQoLLC.TaintMap = nil
 					RGXQoLLC:Print("TaintMap stopped.")
 					return
 				end
-				RGXQoLLC.TaintMap = C_Timer.NewTicker(1, function()
+				RGXQoLLC.TaintMap = RGX:Every(1, function()
 					for k,v in pairs(WorldMapFrame) do
 						local ok, who = issecurevariable(WorldMapFrame, k)
 						if not ok then
