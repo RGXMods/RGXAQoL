@@ -1,0 +1,12 @@
+package-as: RGXQoL
+
+enable-nolib-creation: no
+
+# Directory entries have no trailing slash (the packager matcher treats "docs" and "docs/" differently).
+ignore:
+  - .gitignore
+  - .gitlab-ci.yml
+  - .github
+  - AGENTS.md
+  - README.md
+  - .pkgmeta
