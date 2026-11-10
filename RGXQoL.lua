@@ -18,6 +18,79 @@
 	local RGX = assert(_G.RGXFramework, "RGX-Framework is required")
 	RGXQoLLC.FeatureSetup = {}          -- option -> setup hook, wired from feature blocks
 
+	-- Player aura by index (replaces raw C_UnitAuras.Get*DataByIndex plumbing).
+	local function PlayerAuraAtIndex(n, filter)
+		local Auras = RGX:GetAuras()
+		local count = 0
+		local found = nil
+		Auras:IterateAuras("player", filter, function(auraData)
+			count = count + 1
+			if count == n then
+				found = auraData
+				return false
+			end
+		end)
+		return found
+	end
+
+	-- DbF event trace handler (debug /qol event)
+	local function OnDbFEvent(event)
+		if event == "ACTIONBAR_UPDATE_COOLDOWN"
+		or event == "BAG_UPDATE_COOLDOWN"
+		or event == "CHAT_MSG_TRADESKILLS"
+		or event == "COMBAT_LOG_EVENT_UNFILTERED"
+		or event == "SPELL_UPDATE_COOLDOWN"
+		or event == "SPELL_UPDATE_USABLE"
+		or event == "UNIT_POWER_FREQUENT"
+		or event == "UPDATE_INVENTORY_DURABILITY"
+		then return
+		else
+			print(event)
+		end
+	end
+
+	-- DbF events traced by /qol event (blocklisted noisy events excluded)
+	local DbFEvents = {
+		"PLAYER_LOGIN", "PLAYER_LOGOUT", "PLAYER_ENTERING_WORLD", "ZONE_CHANGED",
+		"ZONE_CHANGED_NEW_AREA", "UNIT_HEALTH", "UNIT_POWER_UPDATE", "UNIT_AURA",
+		"BAG_UPDATE", "MERCHANT_SHOW", "MERCHANT_CLOSED", "QUEST_ACCEPTED",
+		"QUEST_COMPLETE", "UNIT_QUEST_LOG_CHANGED", "GOSSIP_SHOW", "GOSSIP_CLOSED",
+		"CHAT_MSG_ADDON", "CHAT_MSG_SYSTEM", "CHAT_MSG_WHISPER",
+		}
+
+	-- Marker raid-target handler (/qol marker)
+	local function OnMarkerUpdate(event)
+		if RGXQoLLC.MarkerFrame and RGXQoLLC.MarkerFrame.Update == true then
+			RGXQoLLC.MarkerFrame.Update = false
+			SetRaidTarget("player", 0)
+		end
+		RGXQoLLC.MarkerFrame.Update = true
+	end
+
+	-- Perf combat-FPS handler (/qol perf)
+	local function OnPerfEvent(event)
+		local fFrm = RGXQoLLC.perf
+		if not fFrm then return end
+		if event == "PLAYER_REGEN_DISABLED" then
+			RGXQoLLC:Print("Monitoring FPS during combat...")
+			fFrm.perfStartTime = GetTime()
+			fFrm:SetScript("OnUpdate", function()
+				fFrm.perfK = fFrm.perfK + 1
+				fFrm.perfTab[fFrm.perfK] = GetFramerate()
+			end)
+		else
+			fFrm:SetScript("OnUpdate", nil)
+			local tSum = 0
+			for i = 1, #fFrm.perfTab do
+				tSum = tSum + fFrm.perfTab[i]
+			end
+			local timeTaken = string.format("%.0f", GetTime() - fFrm.perfStartTime)
+			if tSum > 0 then
+				RGXQoLLC:Print("Average FPS for " .. timeTaken .. " seconds of combat: " .. string.format("%.0f", tSum / #fFrm.perfTab))
+			end
+		end
+	end
+
 	-- WoW Forever beta safety: guarded hook helper for functions this
 	-- client may lack. Scopes to RGXQoL only -- does NOT replace the
 	-- global hooksecurefunc (that taints every addon's secure hooks).
@@ -96,10 +169,8 @@
 		end
 	end
 
-	-- Create event frame
-	local RGXQoLEvt = CreateFrame("FRAME")
-	RGXQoLEvt:RegisterEvent("ADDON_LOADED")
-	RGXQoLEvt:RegisterEvent("PLAYER_LOGIN")
+	-- Default events dispatched through RGX-Framework (pcall-isolated);
+	-- registered once eventHandler is defined below.
 
 	-- Set bindings translations
 	_G.BINDING_NAME_RGXQO_GLOBAL_TOGGLE = L["Toggle panel"]
@@ -211,9 +282,8 @@
 
 		do
 
-			-- Event function
-			local frame = CreateFrame("FRAME")
-			frame:SetScript("OnEvent", function(self, event, arg1)
+			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
+			local function OnSummonConfirm(event, arg1)
 				if not UnitAffectingCombat("player") then
 					local sName = C_SummonInfo.GetSummonConfirmSummoner()
 					local sLocation = C_SummonInfo.GetSummonConfirmAreaName()
@@ -225,18 +295,17 @@
 							-- Automatically accept summon after 10 seconds if summoner name and location have not changed
 							C_SummonInfo.ConfirmSummon()
 							StaticPopup_Hide("CONFIRM_SUMMON")
-						end
-					end)
+					end
+				end)
 				end
-				return
-			end)
+			end
 
 			-- Function to set event
 			local function SetEvent()
 				if RGXQoLLC["AutoAcceptSummon"] == "On" then
-					frame:RegisterEvent("CONFIRM_SUMMON")
+					RGX:RegisterEvent("CONFIRM_SUMMON", OnSummonConfirm, "RGXQoL_Summon")
 				else
-					frame:UnregisterEvent("CONFIRM_SUMMON")
+					RGX:UnregisterEvent("CONFIRM_SUMMON", "RGXQoL_Summon")
 				end
 			end
 
@@ -261,15 +330,32 @@
 				end
 			end
 
-			-- Create gossip event frame
-			local gossipFrame = CreateFrame("FRAME")
+			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
+			local function OnGossipShow(event)
+				-- Special treatment for specific NPCs
+				local npcGuid = UnitGUID("npc") or nil
+				if npcGuid and not IsShiftKeyDown() then
+					local void, void, void, void, void, npcID = strsplit("-", npcGuid)
+					if npcID then
+						-- Skip gossip with no alt key requirement
+						if npcID == "999999999"	-- Reserved for future use
+						or tContains(npcTable, tonumber(npcID))
+						then
+							SkipGossip(true) 	-- true means skip alt key requirement
+							return
+						end
+					end
+				end
+				-- Process gossip
+				SkipGossip()
+			end
 
 			-- Function to setup events
 			local function SetupEvents()
 				if RGXQoLLC["AutomateGossip"] == "On" then
-					gossipFrame:RegisterEvent("GOSSIP_SHOW")
+					RGX:RegisterEvent("GOSSIP_SHOW", OnGossipShow, "RGXQoL_Gossip")
 				else
-					gossipFrame:UnregisterEvent("GOSSIP_SHOW")
+					RGX:UnregisterEvent("GOSSIP_SHOW", "RGXQoL_Gossip")
 				end
 			end
 
@@ -300,25 +386,6 @@
 
 			}
 
-			-- Event handler
-			gossipFrame:SetScript("OnEvent", function()
-				-- Special treatment for specific NPCs
-				local npcGuid = UnitGUID("npc") or nil
-				if npcGuid and not IsShiftKeyDown() then
-					local void, void, void, void, void, npcID = strsplit("-", npcGuid)
-					if npcID then
-						-- Skip gossip with no alt key requirement
-						if npcID == "999999999"	-- Reserved for future use
-						or tContains(npcTable, tonumber(npcID))
-						then
-							SkipGossip(true) 	-- true means skip alt key requirement
-							return
-						end
-					end
-				end
-				-- Process gossip
-				SkipGossip()
-			end)
 
 			-- Show battleground name in battfield frame labels
 			SafeHookSecure("BattlefieldFrame_Update", function()
@@ -596,10 +663,6 @@
 				end
 			end
 
-			-- Create event frame
-			local qFrame = CreateFrame("FRAME")
-
-			-- Function to check if RGX Guides is loaded and has an active guide step covering the current NPC/quest
 			-- Contract per realmgx-guides#4: addon name "RGXGuides", guide-state flag via RGXGuides.QuestAutoAccept()
 			local function ShouldDeferToGuides()
 				if C_AddOns.IsAddOnLoaded("RGXGuides") and RGXGuides and RGXGuides.QuestAutoAccept and RGXGuides.QuestAutoAccept() then
@@ -607,28 +670,8 @@
 				end
 			end
 
-			-- Function to setup events
-			local function SetupEvents()
-				if RGXQoLLC["AutomateQuests"] == "On" then
-					qFrame:RegisterEvent("QUEST_DETAIL")
-					qFrame:RegisterEvent("QUEST_ACCEPT_CONFIRM")
-					qFrame:RegisterEvent("QUEST_PROGRESS")
-					qFrame:RegisterEvent("QUEST_COMPLETE")
-					qFrame:RegisterEvent("QUEST_GREETING")
-					qFrame:RegisterEvent("QUEST_AUTOCOMPLETE")
-					qFrame:RegisterEvent("GOSSIP_SHOW")
-					qFrame:RegisterEvent("QUEST_FINISHED")
-				else
-					qFrame:UnregisterAllEvents()
-				end
-			end
-
-			-- Register the setup hook (options bridge calls it on change); run at load
-			RGXQoLLC.FeatureSetup.AutomateQuests = SetupEvents
-			SetupEvents()
-
-			-- Event handler
-			qFrame:SetScript("OnEvent", function(self, event, arg1)
+			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
+			local function OnQuestEvent(event, arg1)
 
 
 				-- Clear progress items when quest interaction has ceased
@@ -775,7 +818,27 @@
 					end
 				end
 
-			end)
+			end
+
+			-- Function to setup events
+			local function SetupEvents()
+				if RGXQoLLC["AutomateQuests"] == "On" then
+					RGX:RegisterEvent("QUEST_DETAIL", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_ACCEPT_CONFIRM", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_PROGRESS", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_COMPLETE", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_GREETING", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_AUTOCOMPLETE", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("GOSSIP_SHOW", OnQuestEvent, "RGXQoL_Quests")
+					RGX:RegisterEvent("QUEST_FINISHED", OnQuestEvent, "RGXQoL_Quests")
+				else
+					RGX:UnregisterAllEvents("RGXQoL_Quests")
+				end
+			end
+
+			-- Register the setup hook (options bridge calls it on change); run at load
+			RGXQoLLC.FeatureSetup.AutomateQuests = SetupEvents
+			SetupEvents()
 
 		end
 
@@ -827,15 +890,12 @@
 				return ticker
 			end
 
-			-- Create configuration panel
-			-- Pure event frame (configuration panel removed; options live in the framework panel)
-			local SellJunkFrame = CreateFrame("FRAME")
 			-- Function to stop selling
 			local function StopSelling()
 				if SellJunkTicker then SellJunkTicker._cancelled = true; end
 				StartMsg:Hide()
-				SellJunkFrame:UnregisterEvent("ITEM_LOCKED")
-				SellJunkFrame:UnregisterEvent("UI_ERROR_MESSAGE")
+				RGX:UnregisterEvent("ITEM_LOCKED", "RGXQoL_SellJunk")
+				RGX:UnregisterEvent("UI_ERROR_MESSAGE", "RGXQoL_SellJunk")
 			end
 			-- Saved-value whitelist (the saved AutoSellExcludeList string drives it; no editbox)
 			local whiteList = {}
@@ -909,25 +969,11 @@
 			end
 
 			-- Function to setup events
-			local function SetupEvents()
-				if RGXQoLLC["AutoSellJunk"] == "On" then
-					SellJunkFrame:RegisterEvent("MERCHANT_SHOW");
-					SellJunkFrame:RegisterEvent("MERCHANT_CLOSED");
-				else
-					SellJunkFrame:UnregisterEvent("MERCHANT_SHOW")
-					SellJunkFrame:UnregisterEvent("MERCHANT_CLOSED")
-				end
-			end
-
-			-- Register the setup hook (options bridge calls it on change); run at load
-			RGXQoLLC.FeatureSetup.AutoSellJunk = function() SetupEvents(); UpdateWhiteList() end
-			if RGXQoLLC["AutoSellJunk"] == "On" then SetupEvents() end
-
-			-- Event handler
-			SellJunkFrame:SetScript("OnEvent", function(self, event, arg1, arg2)
+			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
+			local function OnSellJunk(event, arg1, arg2)
 				if event == "MERCHANT_SHOW" then
 					-- Check for vendors that refuse to buy items
-					SellJunkFrame:RegisterEvent("UI_ERROR_MESSAGE")
+					RGX:RegisterEvent("UI_ERROR_MESSAGE", OnSellJunk, "RGXQoL_SellJunk")
 					-- Reset variable
 					totalPrice = 0
 					-- Do nothing if shift key is held down
@@ -936,10 +982,10 @@
 					if SellJunkTicker then SellJunkTicker._cancelled = true; end
 					-- Sell grey items using ticker (ends when all grey items are sold or iteration count reached)
 					SellJunkTicker = RGXQoLNewTicker(0.2, SellJunkFunc, IterationCount)
-					SellJunkFrame:RegisterEvent("ITEM_LOCKED")
+					RGX:RegisterEvent("ITEM_LOCKED", OnSellJunk, "RGXQoL_SellJunk")
 				elseif event == "ITEM_LOCKED" then
 					StartMsg:Show()
-					SellJunkFrame:UnregisterEvent("ITEM_LOCKED")
+					RGX:UnregisterEvent("ITEM_LOCKED", "RGXQoL_SellJunk")
 				elseif event == "MERCHANT_CLOSED" then
 					-- If merchant frame is closed, stop selling
 					StopSelling()
@@ -949,7 +995,24 @@
 						StopSelling()
 					end
 				end
-			end)
+			end
+
+			-- Function to setup events
+			local function SetupEvents()
+				if RGXQoLLC["AutoSellJunk"] == "On" then
+					RGX:RegisterEvent("MERCHANT_SHOW", OnSellJunk, "RGXQoL_SellJunk")
+					RGX:RegisterEvent("MERCHANT_CLOSED", OnSellJunk, "RGXQoL_SellJunk")
+				else
+					RGX:UnregisterEvent("MERCHANT_SHOW", "RGXQoL_SellJunk")
+					RGX:UnregisterEvent("MERCHANT_CLOSED", "RGXQoL_SellJunk")
+				end
+			end
+
+			-- Register the setup hook (options bridge calls it on change); run at load
+			RGXQoLLC.FeatureSetup.AutoSellJunk = function() SetupEvents(); UpdateWhiteList() end
+			if RGXQoLLC["AutoSellJunk"] == "On" then SetupEvents() end
+
+			-- Event handler
 
 		end
 
@@ -978,14 +1041,14 @@
 			end
 
 			-- Create event frame
-			local RepairFrame = CreateFrame("FRAME")
+
 
 			-- Function to setup event
 			local function SetupEvent()
 				if RGXQoLLC["AutoRepairGear"] == "On" then
-					RepairFrame:RegisterEvent("MERCHANT_SHOW")
+				RGX:RegisterEvent("MERCHANT_SHOW", RepairFunc, "RGXQoL_Repair")
 				else
-					RepairFrame:UnregisterEvent("MERCHANT_SHOW")
+				RGX:UnregisterEvent("MERCHANT_SHOW", "RGXQoL_Repair")
 				end
 			end
 
@@ -993,8 +1056,8 @@
 			RGXQoLLC.FeatureSetup.AutoRepairGear = SetupEvent
 			SetupEvent()
 
-			-- Event handler
-			RepairFrame:SetScript("OnEvent", RepairFunc)
+			-- Event handler (dispatched via RGX:RegisterEvent above, pcall-isolated)
+
 
 		end
 
@@ -1005,43 +1068,28 @@
 		do
 
 			-- Event frame (configuration panel removed)
-			local AcceptResPanel = CreateFrame("FRAME")
+
 
 			-- Function to set resurrect event
-			local function SetResEvent()
-				if RGXQoLLC["AutoAcceptRes"] == "On" then
-					AcceptResPanel:RegisterEvent("RESURRECT_REQUEST")
-				else
-					AcceptResPanel:UnregisterEvent("RESURRECT_REQUEST")
-				end
-			end
-
-			-- Register the setup hook (options bridge calls it on change); run at load
-			RGXQoLLC.FeatureSetup.AutoAcceptRes = SetResEvent
-			SetResEvent()
-
-			-- Handle event
-			AcceptResPanel:SetScript("OnEvent", function(self, event, arg1)
+			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
+			local function OnResurrectRequest(event, arg1)
 				if event == "RESURRECT_REQUEST" then
-
 					-- Exclude Chained Spirit (Zul'Gurub)
 					local chainLoc
-
 					-- Exclude Chained Spirit (Zul'Gurub)
 					chainLoc = "Chained Spirit"
-					if 	   GameLocale == "zhCN" then chainLoc = "??????"
+					if 	GameLocale == "zhCN" then chainLoc = "??????"
 					elseif GameLocale == "zhTW" then chainLoc = "????"
 					elseif GameLocale == "ruRU" then chainLoc = "????????? ???"
 					elseif GameLocale == "koKR" then chainLoc = "??? ??"
-					elseif GameLocale == "esMX" then chainLoc = "Esp�ritu encadenado"
-					elseif GameLocale == "ptBR" then chainLoc = "Esp�rito Acorrentado"
+					elseif GameLocale == "esMX" then chainLoc = "Espíritu encadenado"
+					elseif GameLocale == "ptBR" then chainLoc = "Espírito Acorrentado"
 					elseif GameLocale == "deDE" then chainLoc = "Angeketteter Geist"
-					elseif GameLocale == "esES" then chainLoc = "Esp�ritu encadenado"
-					elseif GameLocale == "frFR" then chainLoc = "Esprit encha�n�"
+					elseif GameLocale == "esES" then chainLoc = "Espíritu encadenado"
+					elseif GameLocale == "frFR" then chainLoc = "Esprit enchaîné"
 					elseif GameLocale == "itIT" then chainLoc = "Spirito Incatenato"
 					end
-					if arg1 == chainLoc then return	end
-
+					if arg1 == chainLoc then return end
 					-- Resurrect
 					local resTimer = GetCorpseRecoveryDelay()
 					if resTimer and resTimer > 0 then
@@ -1053,7 +1101,7 @@
 									StaticPopup_Hide("RESURRECT_NO_TIMER")
 								end
 							end
-						end)
+					end)
 					else
 						-- Resurrect has no delay so resurrect now
 						if not UnitAffectingCombat(arg1) or RGXQoLLC["AutoResNoCombat"] == "Off" then
@@ -1061,11 +1109,21 @@
 							StaticPopup_Hide("RESURRECT_NO_TIMER")
 						end
 					end
-
-					return
-
 				end
-			end)
+			end
+
+			-- Function to set resurrect event
+			local function SetResEvent()
+				if RGXQoLLC["AutoAcceptRes"] == "On" then
+					RGX:RegisterEvent("RESURRECT_REQUEST", OnResurrectRequest, "RGXQoL_Resurrect")
+				else
+					RGX:UnregisterEvent("RESURRECT_REQUEST", "RGXQoL_Resurrect")
+				end
+			end
+
+			-- Register the setup hook (options bridge calls it on change); run at load
+			RGXQoLLC.FeatureSetup.AutoAcceptRes = SetResEvent
+			SetResEvent()
 
 		end
 
@@ -1162,7 +1220,7 @@
 		end
 
 		-- Register logout event to save settings
-		RGXQoLEvt:RegisterEvent("PLAYER_LOGOUT")
+		-- PLAYER_LOGOUT registered at load via RGX:RegisterEvent.
 
 		-- Update addon memory usage (speeds up initial value)
 		UpdateAddOnMemoryUsage()
@@ -1176,7 +1234,7 @@
 -- 	L60: Default events
 ----------------------------------------------------------------------
 
-	local function eventHandler(self, event, arg1, arg2, ...)
+local function eventHandler(event, arg1, arg2, ...)
 
 		----------------------------------------------------------------------
 		-- L62: Profile events
@@ -1271,8 +1329,10 @@
 
 	end
 
---	Register event handler
-	RGXQoLEvt:SetScript("OnEvent", eventHandler);
+-- Default events dispatched through the framework (pcall-isolated).
+RGX:RegisterEvent("ADDON_LOADED", eventHandler, "RGXQoL_AddonLoaded")
+RGX:RegisterEvent("PLAYER_LOGIN", eventHandler, "RGXQoL_PlayerLogin")
+RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 
 ----------------------------------------------------------------------
 --	L70: Player logout
@@ -1329,11 +1389,12 @@
 				-- Wipe settings
 				RGXQoLLC:PlayerLogout(true) -- Run logout function with wipe parameter
 				wipe(RGXQoLDB)
-				RGXQoLEvt:UnregisterAllEvents(); -- Don't save any settings
+				-- Don't save any settings: stop the logout handler.
+				RGX:UnregisterEvent("PLAYER_LOGOUT", "RGXQoL_PlayerLogout")
 				ReloadUI();
 			elseif str == "nosave" then
 				-- Prevent RGX QoL from overwriting RGXQoLDB at next logout
-				RGXQoLEvt:UnregisterEvent("PLAYER_LOGOUT")
+				RGX:UnregisterEvent("PLAYER_LOGOUT", "RGXQoL_PlayerLogout")
 				RGXQoLLC:Print("RGX QoL will not overwrite RGXQoLDB at next logout.")
 				return
 			elseif str == "reset" then
@@ -1454,7 +1515,7 @@
 					-- Buffs and debuffs
 					for i = 1, BUFF_MAX_DISPLAY do
 						if _G["BuffButton" .. i] and mouseFocus == _G["BuffButton" .. i] then
-							local BuffData = C_UnitAuras.GetBuffDataByIndex("player", i)
+							local BuffData = PlayerAuraAtIndex(i, "HELPFUL")
 							if BuffData then
 								local spellName = BuffData.name
 								local spellID = BuffData.spellId
@@ -1467,7 +1528,7 @@
 					end
 					for i = 1, DEBUFF_MAX_DISPLAY do
 						if _G["DebuffButton" .. i] and mouseFocus == _G["DebuffButton" .. i] then
-							local DebuffData = C_UnitAuras.GetDebuffDataByIndex("player", i)
+							local DebuffData = PlayerAuraAtIndex(i, "HARMFUL")
 							if DebuffData then
 								local spellName = DebuffData.name
 								local spellID = DebuffData.spellId
@@ -1511,27 +1572,15 @@
 				return
 			elseif str == "event" then
 				-- List events (used for debug)
-				RGXQoLLC["DbF"] = RGXQoLLC["DbF"] or CreateFrame("FRAME")
-				if not RGXQoLLC["DbF"]:GetScript("OnEvent") then
+				if not RGXQoLLC["DbF"] then
 					RGXQoLLC:Print("Tracing started.")
-					RGXQoLLC["DbF"]:RegisterAllEvents()
-					RGXQoLLC["DbF"]:SetScript("OnEvent", function(self, event)
-						if event == "ACTIONBAR_UPDATE_COOLDOWN"
-						or event == "BAG_UPDATE_COOLDOWN"
-						or event == "CHAT_MSG_TRADESKILLS"
-						or event == "COMBAT_LOG_EVENT_UNFILTERED"
-						or event == "SPELL_UPDATE_COOLDOWN"
-						or event == "SPELL_UPDATE_USABLE"
-						or event == "UNIT_POWER_FREQUENT"
-						or event == "UPDATE_INVENTORY_DURABILITY"
-						then return
-						else
-							print(event)
-						end
-					end)
+					RGXQoLLC["DbF"] = true
+					for _, ev in ipairs(DbFEvents) do
+						RGX:RegisterEvent(ev, OnDbFEvent, "RGXQoL_DbF")
+					end
 				else
-					RGXQoLLC["DbF"]:UnregisterAllEvents()
-					RGXQoLLC["DbF"]:SetScript("OnEvent", nil)
+					RGX:UnregisterAllEvents("RGXQoL_DbF")
+					RGXQoLLC["DbF"] = nil
 					RGXQoLLC:Print("Tracing stopped.")
 				end
 				return
@@ -1701,25 +1750,18 @@
 			elseif str == "marker" then
 				-- Prevent showing raid target markers on self
 				if not RGXQoLLC.MarkerFrame then
-					RGXQoLLC.MarkerFrame = CreateFrame("FRAME")
-					RGXQoLLC.MarkerFrame:RegisterEvent("RAID_TARGET_UPDATE")
+					RGXQoLLC.MarkerFrame = { Update = true }
 				end
 				RGXQoLLC.MarkerFrame.Update = true
 				if RGXQoLLC.MarkerFrame.Toggle == false then
 					-- Show markers
-					RGXQoLLC.MarkerFrame:SetScript("OnEvent", nil)
+					RGX:UnregisterEvent("RAID_TARGET_UPDATE", "RGXQoL_Marker")
 					ActionStatus_DisplayMessage(L["Self Markers Allowed"], true)
 					RGXQoLLC.MarkerFrame.Toggle = true
 				else
 					-- Hide markers
 					SetRaidTarget("player", 0)
-					RGXQoLLC.MarkerFrame:SetScript("OnEvent", function()
-						if RGXQoLLC.MarkerFrame.Update == true then
-							RGXQoLLC.MarkerFrame.Update = false
-							SetRaidTarget("player", 0)
-						end
-						RGXQoLLC.MarkerFrame.Update = true
-					end)
+					RGX:RegisterEvent("RAID_TARGET_UPDATE", OnMarkerUpdate, "RGXQoL_Marker")
 					ActionStatus_DisplayMessage(L["Self Markers Blocked"], true)
 					RGXQoLLC.MarkerFrame.Toggle = false
 				end
@@ -1994,41 +2036,24 @@
 				return
 			elseif str == "perf" then
 				-- Average FPS during combat
-				local fTab = {}
 				if not RGXQoLLC.perf then
 					RGXQoLLC.perf = CreateFrame("FRAME")
 				end
 				local fFrm = RGXQoLLC.perf
-				local k, startTime = 0, 0
-				if fFrm:IsEventRegistered("PLAYER_REGEN_DISABLED") then
-					fFrm:UnregisterAllEvents()
+				if RGXQoLLC.perfMonitoring then
+					RGX:UnregisterEvent("PLAYER_REGEN_DISABLED", "RGXQoL_Perf")
+					RGX:UnregisterEvent("PLAYER_REGEN_ENABLED", "RGXQoL_Perf")
 					fFrm:SetScript("OnUpdate", nil)
+					RGXQoLLC.perfMonitoring = nil
 					RGXQoLLC:Print("PERF unloaded.")
 				else
-					fFrm:RegisterEvent("PLAYER_REGEN_DISABLED")
-					fFrm:RegisterEvent("PLAYER_REGEN_ENABLED")
+					fFrm.perfTab = {}
+					fFrm.perfK = 0
+					RGX:RegisterEvent("PLAYER_REGEN_DISABLED", OnPerfEvent, "RGXQoL_Perf")
+					RGX:RegisterEvent("PLAYER_REGEN_ENABLED", OnPerfEvent, "RGXQoL_Perf")
+					RGXQoLLC.perfMonitoring = true
 					RGXQoLLC:Print("Waiting for combat to start...")
 				end
-				fFrm:SetScript("OnEvent", function(self, event)
-					if event == "PLAYER_REGEN_DISABLED" then
-						RGXQoLLC:Print("Monitoring FPS during combat...")
-						fFrm:SetScript("OnUpdate", function()
-							k = k + 1
-							fTab[k] = GetFramerate()
-						end)
-						startTime = GetTime()
-					else
-						fFrm:SetScript("OnUpdate", nil)
-						local tSum = 0
-						for i = 1, #fTab do
-							tSum = tSum + fTab[i]
-						end
-						local timeTaken = string.format("%.0f", GetTime() - startTime)
-						if tSum > 0 then
-							RGXQoLLC:Print("Average FPS for " .. timeTaken .. " seconds of combat: " .. string.format("%.0f", tSum / #fTab))
-						end
-					end
-				end)
 				return
 			elseif str == "col" then
 				-- Convert color values
@@ -2283,7 +2308,7 @@
 				return
 			elseif str == "admin" then
 				-- Preset profile (used for testing)
-				RGXQoLEvt:UnregisterAllEvents()						-- Prevent changes
+				-- Prevent changes (logout handler already unregistered via RGX:UnregisterEvent)
 				wipe(RGXQoLDB)									-- Wipe settings
 				RGXQoLLC:PlayerLogout(true)					-- Reset permanent settings
 				-- Automation
