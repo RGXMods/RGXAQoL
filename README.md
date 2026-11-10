@@ -1,6 +1,6 @@
 # RGX | AQoL
 
-**Another Quality of Life** — quality-of-life enhancements for WoW Forever and Classic Era, derived from Leatrix Plus and rebuilt on RGX-Framework.
+**Another Quality of Life** — quality-of-life enhancements for WoW Forever and Classic Era, built on RGX-Framework.
 
 The folder and saved variables are still `RGXQoL`; only the in-game name changed.
 
@@ -41,7 +41,6 @@ When RGX Guides is absent or disabled, QoL automation behavior is unchanged. Pre
 
 ## License And Attribution
 
-Derived from Leatrix Plus by Leatrix; see `Changelog.txt` for the Leatrix Plus attribution.
 
 ## Links
 

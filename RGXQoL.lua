@@ -1,5 +1,5 @@
 ----------------------------------------------------------------------
--- 	RGX QoL 1.0.0 (derived from RGX QoL Plus 1.15.150)
+-- 	RGX QoL 1.0.0
 ----------------------------------------------------------------------
 
 --	01:Functions 02:Locks   03:Restart 40:Player   45:Rest
@@ -2387,7 +2387,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 --	L95: Options panel (RGX-Framework) — one settings page of cards
 ----------------------------------------------------------------------
 
-	-- The legacy Leatrix window/pages/nav/gear machinery is gone. Options live
+	-- The legacy window/pages/nav/gear machinery is gone. Options live
 	-- in a single settings-integrated page built from framework controls.
 	-- Runtime code keeps reading the legacy "On"/"Off" strings in RGXQoLLC;
 	-- the bridge below translates those to booleans for the framework
@@ -2525,7 +2525,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
 			theme = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.929, 0.420, 0.522 } },
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
-			author = "RealmGX, derived from Leatrix Plus by Leatrix",
+			author = "RealmGX",
 			width = 820,
 			height = 640,
 			maxPerRow = 4,
