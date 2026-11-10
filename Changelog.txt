@@ -1,3 +1,8 @@
+2.1.6 - 9th November 2026
+- Event handling (gossip, quests, auras, the debug traces, raid markers and combat timing) now runs through the RGX-Framework event APIs instead of raw frames.
+- Added packaging metadata and the addon's own icon.
+- No behaviour changes.
+
 2.1.4 - 9th November 2026
 - Published to CurseForge as RGX | AQoL (project 1795243); the TOC now carries X-Curse-Project-ID.
 - No behaviour changes.
