@@ -9,15 +9,13 @@ ignore:
   - .github
   - AGENTS.md
   - README.md
+  - Changelog.txt
   - docs
   - .pkgmeta
 
 required-dependencies:
   - rgx-framework
 
-optional-dependencies:
-  - elvui
-
 manual-changelog:
-  filename: Changelog.txt
-  markup-type: text
+  filename: docs/CHANGELOG.md
+  markup-type: markdown

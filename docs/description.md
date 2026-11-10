@@ -12,7 +12,6 @@ Quality-of-life automation for **WoW Forever** and **Classic Era**, built on RGX
 ## Requirements
 
 - [RGX-Framework](https://www.curseforge.com/wow/addons/rgx-framework) (required)
-- ElvUI (optional)
 
 ## Commands
 
