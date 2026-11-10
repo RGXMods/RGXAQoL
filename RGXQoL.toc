@@ -13,7 +13,7 @@
 ## X-RGX-Framework-MinVersion: 2.7.12
 ## RequiredDeps: RGX-Framework
 
-## IconTexture: Interface\AddOns\RGX-Framework\media\logo.tga
+## IconTexture: Interface\AddOns\RGXQoL\RGXQoL
 ## OptionalDeps: ElvUI
 
 ## X-Curse-Project-ID: 1795243
