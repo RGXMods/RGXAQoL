@@ -9,4 +9,13 @@ ignore:
   - .github
   - AGENTS.md
   - README.md
+  - Changelog.txt
+  - docs
   - .pkgmeta
+
+required-dependencies:
+  - rgx-framework
+
+manual-changelog:
+  filename: docs/CHANGELOG.md
+  markup-type: markdown

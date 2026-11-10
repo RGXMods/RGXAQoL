@@ -3,9 +3,9 @@
 ## Title: |cff8B1538RGX|r |cffffffffAQoL|r
 ## Notes: Another Quality of Life - quality of life enhancements for WoW Forever and Classic Era.
 
-## Version: 2.1.6
+## Version: 2.1.7
 ## X-DisplayName: RGX AQoL
-## Author: RealmGX, derived from Leatrix Plus by Leatrix
+## Author: RealmGX
 ## Category: RealmGX
 ## Group: RealmGX
 ## SavedVariables: RGXQoLDB
@@ -18,7 +18,7 @@
 
 ## X-Curse-Project-ID: 1795243
 ## X-Website: https://github.com/RGXMods/RGXQoL
-## X-License: See Changelog.txt for Leatrix Plus attribution
+
 ## X-Discord: discord.gg/N7kdKAHVVF
 
 RGXQoL_Locale.lua
