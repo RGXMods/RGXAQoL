@@ -94,6 +94,16 @@
 	-- WoW Forever beta safety: guarded hook helper for functions this
 	-- client may lack. Scopes to RGXQoL only -- does NOT replace the
 	-- global hooksecurefunc (that taints every addon's secure hooks).
+	-- Quest API shims. RGX Forever has C_QuestLog.IsComplete and C_QuestLog.GetLogIndexForQuestID but not the
+	-- classic IsQuestComplete / GetQuestLogIndexByID / GetQuestLogIsAutoComplete (Forever GlobalAPI dump). The
+	-- gossip quest loop called IsQuestComplete for every in-progress quest, which raised an error and stopped
+	-- all quest automation at any NPC that listed one.
+	local function QuestIsComplete(questID)
+		if C_QuestLog and C_QuestLog.IsComplete then return C_QuestLog.IsComplete(questID) end
+		if IsQuestComplete then return IsQuestComplete(questID) end
+		return false
+	end
+
 	local function SafeHookSecure(name, func)
 		if type(name) == "string" and _G[name] == nil then
 			return
@@ -807,8 +817,9 @@
 				-- Show quest dialog for quests that use the objective tracker (it will be completed automatically)
 				if event == "QUEST_AUTOCOMPLETE" then
 					if RGXQoLLC["AutoQuestCompleted"] == "On" then
-						local index = GetQuestLogIndexByID(arg1)
-						if GetQuestLogIsAutoComplete(index) then
+						local index = C_QuestLog and C_QuestLog.GetLogIndexForQuestID and C_QuestLog.GetLogIndexForQuestID(arg1)
+							or GetQuestLogIndexByID and GetQuestLogIndexByID(arg1)
+						if index and GetQuestLogIsAutoComplete and GetQuestLogIsAutoComplete(index) and ShowQuestComplete then
 							ShowQuestComplete(index)
 						end
 					end
@@ -852,7 +863,7 @@
 							if RGXQoLLC["AutoQuestCompleted"] == "On" then
 								local gossipQuests = C_GossipInfo.GetActiveQuests()
 								for titleIndex, questInfo in ipairs(gossipQuests) do
-									if questInfo.title and (questInfo.isComplete or questInfo.questID and IsQuestComplete(questInfo.questID)) then
+									if questInfo.title and (questInfo.isComplete or questInfo.questID and QuestIsComplete(questInfo.questID)) then
 										if questInfo.questID then
 											return C_GossipInfo.SelectActiveQuest(questInfo.questID)
 										end
@@ -2541,6 +2552,8 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				step = 1,
 				default = BridgeStore[bkey],
 				suffix = suffix or "",
+				-- the automation reads the legacy option, so a slider change must reach it (it never did)
+				onChange = function(value) OnBridgeChange(bkey, value) end,
 			})
 			card.flow:Add(w, { fill = true })
 			return w
