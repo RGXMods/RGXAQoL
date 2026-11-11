@@ -2654,6 +2654,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
+			hideTabRow = true,	-- one page: the content starts right under the header (RGX-Framework 2.17.4+)
 			-- One page: four cards, the shared options and vendors on the left, what is automated on the right.
 			-- It is a one-tab panel, the build every RGX mod's settings page uses. The framework's tab-less
 			-- "content =" form came up empty on the Blizzard Settings page, so it is not used.
@@ -2692,7 +2693,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		}) end)
 
 		RGXQoLLC.QoLPanel = panel
-		-- Only one tab, so the tab button adds nothing.
+		-- Only one tab, so the tab button adds nothing (an older framework ignores hideTabRow).
 		if panel and panel.tabs and panel.tabs[1] then panel.tabs[1]:Hide() end
 
 
