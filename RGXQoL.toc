@@ -3,7 +3,7 @@
 ## Title: |cff8B1538RGX|r |cffffffffAQoL|r
 ## Notes: Another Quality of Life - quality of life enhancements for WoW Forever.
 
-## Version: 2.1.10
+## Version: 2.1.11
 ## X-DisplayName: RGX AQoL
 ## Author: RealmGX
 ## Category: RealmGX
@@ -17,7 +17,7 @@
 ## OptionalDeps: ElvUI
 
 ## X-Curse-Project-ID: 1795243
-## X-Website: https://github.com/RGXMods/RGXQoL
+## X-Website: https://github.com/RGXMods/RGXAQoL
 
 ## X-Discord: discord.gg/N7kdKAHVVF
 

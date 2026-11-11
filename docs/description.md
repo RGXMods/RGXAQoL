@@ -20,5 +20,5 @@ Quality-of-life automation for **WoW Forever**, built on RGX-Framework.
 
 ## Links
 
-- Source and issues: https://github.com/RGXMods/RGXQoL
+- Source and issues: https://github.com/RGXMods/RGXAQoL
 - Discord: https://discord.gg/N7kdKAHVVF

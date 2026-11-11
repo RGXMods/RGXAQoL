@@ -1,5 +1,10 @@
 # RGX | AQoL
 
+## 2.1.11
+
+- New minimap and panel icon: a solid RGX red disc with a white plus and a light ring. The thin red ring in 2.1.10 read as black against the dark minimap button.
+- The repository is now named RGXAQoL (the addon folder stays RGXQoL, so settings carry over).
+
 ## 2.1.10
 
 - The options follow the RGX standard layout: General is the first tab and Automation the second, each a single column of full-width cards (Questing, Party and death, Vendors), the same as RGX Professions.
