@@ -1,5 +1,10 @@
 # RGX | AQoL
 
+## 2.1.17
+
+- A card that fails to build is reported in chat ("Options: ... failed to build") and skipped, so the rest of the page still shows instead of coming up empty.
+- If options or the chat prefix look wrong, update RGX-Framework to 2.17.3 or newer; the Addons-menu and login switches and the `[AQoL]` chat prefix need it.
+
 ## 2.1.16
 
 - The options page and chat prefix work on an older RGX-Framework. With a framework before 2.17.3 the General card was missing and the page came up empty; it is now built from the same switches in the addon, and chat lines keep the icon and [AQoL] prefix. Updating RGX-Framework to 2.17.3 is still recommended.
