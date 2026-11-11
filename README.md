@@ -43,5 +43,5 @@ When RGX Guides is absent or disabled, QoL automation behavior is unchanged. Pre
 
 ## Links
 
-- Development (GitLab): `rgxmods/warcraft/RGXQoL`
-- Distribution mirror (GitHub): [RGXMods/RGXQoL](https://github.com/RGXMods/RGXQoL)
+- Development (GitLab): `rgxmods/warcraft/RGXAQoL`
+- Distribution mirror (GitHub): [RGXMods/RGXAQoL](https://github.com/RGXMods/RGXAQoL)
