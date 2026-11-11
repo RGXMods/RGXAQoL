@@ -1,5 +1,12 @@
 # RGX | AQoL
 
+## 2.1.12
+
+- All four cards (General, Vendors, Questing, Party and death) fit on one page in two columns; there are no tabs.
+- The override key is a dropdown (Shift, Alt, Ctrl, Cmd) instead of a 1 to 4 slider with a legend.
+- The General card has two switches, minimap button and chat messages: the Addons-menu entry is always on and the loaded message is always shown, so they are no longer options. Needs RGX-Framework 2.17.3.
+- The icon is the RGX-Framework brand icon everywhere: the Addons list, the panel header and the minimap button. AQoL ships no icon file of its own.
+
 ## 2.1.11
 
 - New minimap and panel icon: a solid RGX red disc with a white plus and a light ring. The thin red ring in 2.1.10 read as black against the dark minimap button.
