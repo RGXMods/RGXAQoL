@@ -1,5 +1,15 @@
 # RGX | AQoL
 
+## 2.1.15
+
+- The welcome message prints on every login. It only printed the very first time the addon ran, so it never appeared again.
+- The General card has three switches on the single page: Show minimap button, Show chat messages and Show welcome message.
+- Chat lines keep the RGX | AQoL icon and [AQoL] prefix. The addon still loads, with plain chat, on an older RGX-Framework.
+
+## 2.1.14
+
+- The panel header reads "RGX Mods" and "by DonnieDice", the same as the other RGX addons.
+
 ## 2.1.13
 
 - The options are a single page with no tab row, so the four cards use the whole panel.

@@ -183,7 +183,11 @@
 	-- Print text
 	-- Chat goes through the framework's shared chat helper: the standard "chat output", "login message" and
 	-- "chat prefix" options (see the General tab) apply to every line this addon prints.
-	RGXQoLLC.chat = RGX:CreateChat({
+	RGXQoLLC.chat = (RGX.CreateChat or function() return {
+		-- RGX-Framework older than 2.17: plain chat so the addon still loads
+		Print = function(_, text) print("[AQoL] " .. tostring(text)) end,
+		Login = function(_, text) print("[AQoL] " .. tostring(text)) end,
+	} end)(RGX, {
 		storage = function() return _G.RGXQoLDB end,
 		name = "RGX AQoL",
 		label = "AQoL",
@@ -1247,13 +1251,11 @@
 		-- Final code for Player
 		----------------------------------------------------------------------
 
-		-- Show first run message
-		if not RGXQoLDB["FirstRunMessageSeen"] then
-			RGX:After(1, function()
-				RGXQoLLC.chat:Login(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open"] .. " " .. RGXQoLLC.BrandTitle .. ".")
-				RGXQoLDB["FirstRunMessageSeen"] = true
-			end)
-		end
+		-- Welcome message on every login (the "Show welcome message" switch and the framework-wide login switch
+		-- silence it). It used to print only on the very first run, so players never saw it again.
+		RGX:After(1, function()
+			RGXQoLLC.chat:Login(RGXQoLLC.BrandTitle .. " v" .. tostring(RGXQoLLC:GetAddonVersion()) .. " " .. L["loaded"] .. ". " .. L["Enter"] .. " |cff00ff00/qol|r " .. L["or click the minimap button to open"] .. ".")
+		end)
 
 		-- Register logout event to save settings
 		-- PLAYER_LOGOUT registered at load via RGX:RegisterEvent.
@@ -2573,7 +2575,8 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
 			theme = RGXQoLLC.Brand,
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
-			author = "RealmGX",
+			author = "DonnieDice",
+			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
 			-- One page, no tab row: four cards, the shared options and vendors on the left, what is automated on the right.
@@ -2586,7 +2589,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 							description = false,
 							prefix = false,
 							addonMenu = false,
-							loginMessage = false,
+							labels = { chat = L["Show chat messages"], login = L["Show welcome message"] },
 						})
 						local vendors = Card(host, L["Vendors"])
 						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
