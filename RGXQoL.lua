@@ -2520,24 +2520,24 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			return w
 		end
 
-		-- Override key: one dropdown instead of a 1-4 slider and a legend.
-		local OverrideKeys = {
-			{ text = L["Shift"], value = 1 }, { text = L["Alt"], value = 2 },
-			{ text = L["Ctrl"], value = 3 }, { text = L["Cmd"], value = 4 },
-		}
+		-- Override key: one compact button that cycles Shift, Alt, Ctrl, Cmd (a dropdown or slider would
+		-- not fit the card).
 		local function KeyChoice(card, label, bkey)
-			local Drops = RGX.GetDropdowns and RGX:GetDropdowns()
-			if not Drops then return end
-			local w = Drops:CreateNestedDropdown(card.content, {
-				label = label, width = 260, buttonWidth = 120,
-				value = BridgeStore[bkey], items = OverrideKeys,
-				onChange = function(value)
+			local names = { L["Shift"], L["Alt"], L["Ctrl"], L["Cmd"] }
+			local function caption() return label .. ": " .. (names[BridgeStore[bkey]] or names[1]) end
+			local button
+			button = UI:CreateButton(card.content, {
+				text = caption(),
+				height = 22,
+				onClick = function()
+					local value = ((tonumber(BridgeStore[bkey]) or 1) % 4) + 1
 					BridgeStore[bkey] = value
 					OnBridgeChange(bkey, value)
+					button:SetText(caption())
 				end,
 			})
-			card.flow:Add(w, { fill = true })
-			return w
+			card.flow:Add(button, { fill = true })
+			return button
 		end
 
 		-- builders[i](host) returns the card(s) for column i; the columns share one scroll canvas.
@@ -2576,50 +2576,45 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			author = "RealmGX",
 			width = 820,
 			height = 640,
-			tabs = {
-				{
-					-- Four cards on one page: the shared options and vendors on the left, what is automated on the right.
-					text = L["Settings"],
-					content = function(frame)
-						Grid(frame, {
-							function(host)
-								local general = UI:CreateStandardCard(host, {
-									storage = RGXQoLDB,
-									minimap = function() return RGXQoLLC.minimapButton end,
-									description = false,
-									prefix = false,
-									addonMenu = false,
-									loginMessage = false,
-								})
-								local vendors = Card(host, L["Vendors"])
-								Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
-								Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
-								Toggle(vendors, L["Repair automatically"], "autoRepairGear")
-								Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
-								return { general, vendors }
-							end,
-							function(host)
-								local questing = Card(host, L["Questing"])
-								Toggle(questing, L["Automate quests"], "automateQuests")
-								Toggle(questing, L["Accept available quests"], "autoQuestAvailable")
-								Toggle(questing, L["Turn in completed quests"], "autoQuestCompleted")
-								Toggle(questing, L["Automate gossip"], "automateGossip")
-								Toggle(questing, L["Require override key"], "autoQuestShift")
-								KeyChoice(questing, L["Override key"], "autoQuestKeyMenu")
-
-								local party = Card(host, L["Party and death"])
-								Toggle(party, L["Accept summon"], "autoAcceptSummon")
-								Toggle(party, L["Accept resurrection"], "autoAcceptRes")
-								Toggle(party, L["Skip combat resurrection"], "autoResNoCombat")
-								Toggle(party, L["Release in PvP"], "autoReleasePvP")
-								Toggle(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
-								Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
-								return { questing, party }
-							end,
+			-- One page, no tab row: four cards, the shared options and vendors on the left, what is automated on the right.
+			content = function(frame)
+				Grid(frame, {
+					function(host)
+						local general = UI:CreateStandardCard(host, {
+							storage = RGXQoLDB,
+							minimap = function() return RGXQoLLC.minimapButton end,
+							description = false,
+							prefix = false,
+							addonMenu = false,
+							loginMessage = false,
 						})
+						local vendors = Card(host, L["Vendors"])
+						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
+						Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
+						Toggle(vendors, L["Repair automatically"], "autoRepairGear")
+						Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
+						return { general, vendors }
 					end,
-				},
-			},
+					function(host)
+						local questing = Card(host, L["Questing"])
+						Toggle(questing, L["Automate quests"], "automateQuests")
+						Toggle(questing, L["Accept available quests"], "autoQuestAvailable")
+						Toggle(questing, L["Turn in completed quests"], "autoQuestCompleted")
+						Toggle(questing, L["Automate gossip"], "automateGossip")
+						Toggle(questing, L["Require override key"], "autoQuestShift")
+						KeyChoice(questing, L["Override key"], "autoQuestKeyMenu")
+
+						local party = Card(host, L["Party and death"])
+						Toggle(party, L["Accept summon"], "autoAcceptSummon")
+						Toggle(party, L["Accept resurrection"], "autoAcceptRes")
+						Toggle(party, L["Skip combat resurrection"], "autoResNoCombat")
+						Toggle(party, L["Release in PvP"], "autoReleasePvP")
+						Toggle(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
+						Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
+						return { questing, party }
+					end,
+				})
+			end,
 		}) end)
 
 		RGXQoLLC.QoLPanel = panel

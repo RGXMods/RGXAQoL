@@ -1,5 +1,10 @@
 # RGX | AQoL
 
+## 2.1.13
+
+- The options are a single page with no tab row, so the four cards use the whole panel.
+- The override key is one compact button that cycles Shift, Alt, Ctrl and Cmd. The dropdown in 2.1.12 was too tall and broke the page layout.
+
 ## 2.1.12
 
 - All four cards (General, Vendors, Questing, Party and death) fit on one page in two columns; there are no tabs.
