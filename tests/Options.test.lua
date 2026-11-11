@@ -71,4 +71,11 @@ check(src:find('CHAT_COLOR = "8B1538"', 1, true) and src:find("tagColor = CHAT_C
 check(src:find('RGX:After(delay, reflow)', 1, true) and src:find('str == "panel"', 1, true), "the page re-lays out after build and /qol panel reports its state")
 check(src:find("panel.tabs[1]:Hide()", 1, true), "the lone tab button is hidden")
 check(src:find("hideTabRow = true", 1, true), "the lone tab row is hidden so the page starts under the header")
+-- 6. Automation compatibility on RGX Forever.
+check(src:find("local function QuestIsComplete(questID)", 1, true) and src:find("C_QuestLog.IsComplete", 1, true), "gossip quests use a C_QuestLog.IsComplete shim")
+check(not src:find("and IsQuestComplete(questInfo.questID)", 1, true), "no bare IsQuestComplete call in the gossip loop")
+check(not src:find("GetQuestLogIndexByID(arg1)\n\t\t\t\t\t\tif GetQuestLogIsAutoComplete(index)", 1, true), "quest autocomplete does not call missing quest-log functions unguarded")
+local sliderStart = src:find("local function Slider(card, label, bkey, min, max, suffix)", 1, true)
+local sliderBody = src:sub(sliderStart, src:find("\n\t\tend\n", sliderStart, true))
+check(sliderBody:find("onChange = function(value) OnBridgeChange(bkey, value) end", 1, true), "sliders push their value to the automation's legacy option")
 print("Options.test OK")

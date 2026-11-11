@@ -1,5 +1,11 @@
 # RGX | AQoL
 
+## 2.1.22
+
+- Quest and gossip automation works on RGX Forever again. It called `IsQuestComplete`, which Forever does not have, for every in-progress quest an NPC listed; that raised an error and stopped quest automation at any such NPC. It now uses `C_QuestLog.IsComplete`.
+- The quest-autocomplete path no longer calls missing quest-log functions.
+- The Release delay slider now takes effect. It changed the setting shown on the page but never the value the PvP release automation reads.
+
 ## 2.1.21
 
 - The page now starts right under the panel header: the empty strip left by the hidden tab row is gone. Needs RGX-Framework 2.17.4; an older framework keeps the strip.
