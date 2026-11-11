@@ -1,6 +1,6 @@
 # RGX | AQoL — Another Quality of Life
 
-Quality-of-life automation for **WoW Forever** and **Classic Era**, built on RGX-Framework.
+Quality-of-life automation for **WoW Forever**, built on RGX-Framework.
 
 ## Features
 

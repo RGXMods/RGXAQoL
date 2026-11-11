@@ -1,6 +1,6 @@
 # RGXQoL
 
-Quality-of-life enhancements for WoW Forever (and Classic Era). Requires `RGX-Framework`.
+Quality-of-life enhancements for WoW Forever. Requires `RGX-Framework`.
 
 ## Commands
 
@@ -26,12 +26,12 @@ Quality-of-life enhancements for WoW Forever (and Classic Era). Requires `RGX-Fr
 - Forbidden patterns that fail `rgx_audit_lua` and must not appear in new code: raw `C_Timer`, manual event frames, `SLASH_` globals, unguarded `SetAttribute`, raw aura plumbing, and raw hook reassignment.
 - Validation: Lua 5.1 (`luac5.1 -p`) and XML (`xmllint`) must pass through the shared CI include before every MR, and the root README stays nonempty and substantive.
 - Dependencies: keep `## RequiredDeps: RGX-Framework` and any `## X-RGX-Framework-MinVersion` accurate against the framework version line, and match the TOC SavedVariables name (`RGXQoLDB`) with the declarative `dbName`.
-- Repo facts: this addon targets WoW Forever and Classic Era (`11509,16001`) and exposes `/qol` and `/rl`. The TOC owns the `X.Y.Z` version and load order (`RGXQoL_Locale.lua`, then `RGXQoL.lua`; the options UI is a single settings-integrated page built with `UI:CreateOptionsPanel`). Recheck facts in the TOC and README when they change.
+- Repo facts: this addon targets WoW Forever (`16001`) and exposes `/qol` and `/rl`. The TOC owns the `X.Y.Z` version and load order (`RGXQoL_Locale.lua`, then `RGXQoL.lua`; the options UI is a single settings-integrated page built with `UI:CreateOptionsPanel`). Recheck facts in the TOC and README when they change.
 
 ## Keeping Interface Versions Current
 
 - Ground truth is the game client's own `.build.info` in the WoW installation root: one pipe-delimited row per installed product; the Product column names the flavor and the Version column gives `major.minor.patch.build`. Read it immediately before changing a TOC or releasing.
-- Derive `## Interface:` as `major * 10000 + minor * 100 + patch` (verified: `1.60.1` -> `16001`, `1.15.9` -> `11509`, `2.5.6` -> `20506`, `5.5.4` -> `50504`). This addon's TOC carries both flavors as a comma-separated list; WoW Forever is the classic beta product row.
+- Derive `## Interface:` as `major * 10000 + minor * 100 + patch` (verified: `1.60.1` -> `16001`, `1.15.9` -> `11509`, `2.5.6` -> `20506`, `5.5.4` -> `50504`). This addon targets WoW Forever only, so its TOC carries `16001` alone.
 - Online cross-checks for builds not installed locally: the wago.tools build pages and versions.wowtools.io. Verify a feed is reachable at runtime before trusting it; if it is unreachable, the installed client's `.build.info` is authoritative.
 - A stale `## Interface:` value is a bug: fix it in a task-branch MR with green shared validation before any release.
 - Release through GitLab MR and green shared validation, then patch-bump through the same discipline and create a protected GitLab release tag matching the TOC version. Verify the identical tag on the downstream `RGXMods/RGXQoL` mirror before reporting distribution pickup.

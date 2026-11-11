@@ -2473,10 +2473,10 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		SyncBridgeFromLegacy()
 
 		-- Framework primitives only: cards, canonical RGX switches, sliders.
-		local function Card(frame, title)
-			local card = UI:CreateCard(frame, { title = title })
-			frame._rgxFlow:Add(card)
-			return card
+		-- Every tab is a two-column card grid, built the way the framework builds
+		-- grid = 2 pages: one column host and one flow per column, one card per column.
+		local function Card(host, title)
+			return UI:CreateCard(host, { title = title })
 		end
 
 		local function Text(card, text)
@@ -2517,6 +2517,28 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			return w
 		end
 
+		-- builders[i](host) returns the card for column i; the columns share one scroll canvas.
+		local function Grid(frame, builders)
+			local canvas = frame._rgxCanvas or frame
+			local hosts = { UI:CreateColumns(canvas, #builders) }
+			local flows = {}
+			for i, host in ipairs(hosts) do flows[i] = UI:CreateFlowLayout(host) end
+			for i, build in ipairs(builders) do
+				local card = build(hosts[i])
+				card:AutoHeight()
+				flows[i]:Add(card)
+			end
+			local function reflow()
+				if canvas:GetWidth() <= 0 then return end
+				local used = 0
+				for _, flow in ipairs(flows) do used = math.max(used, flow:Apply()) end
+				canvas:SetHeight(math.max(1, used))
+			end
+			reflow()
+			canvas:HookScript("OnShow", reflow)
+			canvas:HookScript("OnSizeChanged", reflow)
+		end
+
 		local panel = UI:CreateOptionsPanel({
 			addonName = "RGXQoL",
 			title = "RGX | AQoL",
@@ -2528,63 +2550,73 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			author = "RealmGX",
 			width = 820,
 			height = 640,
-			maxPerRow = 4,
+			maxPerRow = 2,
 			tabs = {
 				{
-					text = L["Character"],
+					text = L["Automation"],
 					content = function(frame)
-						local questing = Card(frame, L["Questing"])
-						Text(questing, L["Quests, gossip and the override key that gates them."])
-						Toggle(questing, L["Automate quests"], "automateQuests")
-						Toggle(questing, L["Accept available quests automatically"], "autoQuestAvailable")
-						Toggle(questing, L["Turn-in completed quests automatically"], "autoQuestCompleted")
-						Toggle(questing, L["Require override key for quest automation"], "autoQuestShift")
-						Slider(questing, L["Override key"] .. " (1=SHIFT 2=ALT 3=CTRL 4=CMD)", "autoQuestKeyMenu", 1, 4, "")
-						Toggle(questing, L["Automate gossip"], "automateGossip")
-						questing:AutoHeight()
-
-						local automation = Card(frame, L["Automation"])
-						Text(automation, L["Summons, resurrections and releasing your corpse."])
-						Toggle(automation, L["Accept summon"], "autoAcceptSummon")
-						Toggle(automation, L["Accept resurrection"], "autoAcceptRes")
-						Toggle(automation, L["Exclude combat resurrection"], "autoResNoCombat")
-						Toggle(automation, L["Release in PvP"], "autoReleasePvP")
-						Toggle(automation, L["Exclude Alterac Valley"], "autoReleaseNoAlterac")
-						Slider(automation, L["Release delay"] .. " (ms)", "autoReleaseDelay", 200, 3000, "ms")
-						automation:AutoHeight()
+						Grid(frame, {
+							function(host)
+								local questing = Card(host, L["Questing"])
+								Text(questing, L["Quests, gossip and the override key that gates them."])
+								Toggle(questing, L["Automate quests"], "automateQuests")
+								Toggle(questing, L["Accept available quests automatically"], "autoQuestAvailable")
+								Toggle(questing, L["Turn-in completed quests automatically"], "autoQuestCompleted")
+								Toggle(questing, L["Require override key for quest automation"], "autoQuestShift")
+								Slider(questing, L["Override key"] .. " (1=SHIFT 2=ALT 3=CTRL 4=CMD)", "autoQuestKeyMenu", 1, 4, "")
+								Toggle(questing, L["Automate gossip"], "automateGossip")
+								return questing
+							end,
+							function(host)
+								local automation = Card(host, L["Automation"])
+								Text(automation, L["Summons, resurrections and releasing your corpse."])
+								Toggle(automation, L["Accept summon"], "autoAcceptSummon")
+								Toggle(automation, L["Accept resurrection"], "autoAcceptRes")
+								Toggle(automation, L["Exclude combat resurrection"], "autoResNoCombat")
+								Toggle(automation, L["Release in PvP"], "autoReleasePvP")
+								Toggle(automation, L["Exclude Alterac Valley"], "autoReleaseNoAlterac")
+								Slider(automation, L["Release delay"] .. " (ms)", "autoReleaseDelay", 200, 3000, "ms")
+								return automation
+							end,
+						})
 					end,
 				},
 				{
-					text = L["Vendors"],
+					text = L["Utilities"],
 					content = function(frame)
-						local vendors = Card(frame, L["Vendors"])
-						Text(vendors, L["Automatic junk selling and gear repair at vendors."])
-						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
-						Toggle(vendors, L["Show vendor summary in chat"], "autoSellShowSummary")
-						Toggle(vendors, L["Repair automatically"], "autoRepairGear")
-						Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
-						vendors:AutoHeight()
-					end,
-				},
-				{
-					text = L["Addon"],
-					content = function(frame)
-						local addon = Card(frame, L["Addon"])
-						Text(addon, L["Minimap button, language and UI reload options."])
-						Toggle(addon, L["Show minimap button"], "showMinimapIcon")
-						Toggle(addon, L["Use English language"], "useEnglishLanguage")
-						addon:AutoHeight()
+						Grid(frame, {
+							function(host)
+								local vendors = Card(host, L["Vendors"])
+								Text(vendors, L["Automatic junk selling and gear repair at vendors."])
+								Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
+								Toggle(vendors, L["Show vendor summary in chat"], "autoSellShowSummary")
+								Toggle(vendors, L["Repair automatically"], "autoRepairGear")
+								Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
+								return vendors
+							end,
+							function(host)
+								local addon = Card(host, L["Addon"])
+								Text(addon, L["Minimap button, language and UI reload options."])
+								Toggle(addon, L["Show minimap button"], "showMinimapIcon")
+								Toggle(addon, L["Use English language"], "useEnglishLanguage")
 
-						ReloadButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-						ReloadButton:SetSize(120, 22)
-						ReloadButton:SetText(L["Reload UI"])
-						ReloadButton:SetPoint("TOPLEFT", addon, "BOTTOMLEFT", 0, -8)
-						ReloadButton:SetScript("OnClick", function() ReloadUI() end)
-						ReloadLabel = ReloadButton:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-						ReloadLabel:SetPoint("RIGHT", ReloadButton, "LEFT", -10, 0)
-						ReloadLabel:SetText(L["Your UI needs to be reloaded."])
-						ReloadLabel:Hide()
-						RGXQoLLC:ReloadCheck()
+								-- The reload button sits in its own row so the flow does not stretch it.
+								local row = CreateFrame("Frame", nil, addon.content)
+								row:SetHeight(28)
+								ReloadButton = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
+								ReloadButton:SetSize(120, 22)
+								ReloadButton:SetText(L["Reload UI"])
+								ReloadButton:SetPoint("LEFT", row, "LEFT", 0, 0)
+								ReloadButton:SetScript("OnClick", function() ReloadUI() end)
+								ReloadLabel = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
+								ReloadLabel:SetPoint("LEFT", ReloadButton, "RIGHT", 10, 0)
+								ReloadLabel:SetText(L["Your UI needs to be reloaded."])
+								ReloadLabel:Hide()
+								addon.flow:Add(row)
+								RGXQoLLC:ReloadCheck()
+								return addon
+							end,
+						})
 					end,
 				},
 			},
