@@ -185,12 +185,13 @@
 	-- "welcome message" options apply to every line this addon prints. On an older framework the same
 	-- "icon - [AQoL] message" line is built here from RGX:CreateChatPrefix, which has long existed.
 	local CHAT_ICON = "Interface\\AddOns\\RGX-Framework\\media\\round.tga"
+	local CHAT_COLOR = "8B1538"	-- the addon's primary brand colour (RGXQoLLC.Brand.primary)
 	local function FallbackChat()
 		local chat = {}
 		local function isOn(key) local db = _G.RGXQoLDB; return not (db and db[key] == false) end
 		function chat:Print(text)
 			if not isOn("chatOutput") then return end
-			local prefix = RGX.CreateChatPrefix and RGX:CreateChatPrefix({ icon = CHAT_ICON, tag = "AQoL" }) or "[AQoL]"
+			local prefix = RGX.CreateChatPrefix and RGX:CreateChatPrefix({ icon = CHAT_ICON, tag = "AQoL", tagColor = CHAT_COLOR }) or "[AQoL]"
 			print(prefix .. " " .. tostring(text))
 		end
 		function chat:Login(text)
@@ -203,6 +204,7 @@
 		name = "RGX AQoL",
 		label = "AQoL",
 		icon = CHAT_ICON,
+		tagColor = CHAT_COLOR,
 		tag = "[RGXQoL]",
 	}) or FallbackChat()
 	function RGXQoLLC:Print(text)
@@ -2024,6 +2026,15 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 					RGXQoLLC:Print("No media duplicates found.")
 				end
 				return
+			elseif str == "panel" then
+				-- Diagnostics for the options page
+				local UI = _G.RGXUI
+				local c = RGXQoLLC.panelCanvas
+				local lay = RGXQoLLC.panelLayout
+				RGXQoLLC:Print("panel built: " .. tostring(RGXQoLLC.QoLPanel ~= nil)
+					.. ", standard card: " .. tostring(UI and UI.CreateStandardCard ~= nil)
+					.. ", canvas: " .. (c and (math.floor(c:GetWidth()) .. "x" .. math.floor(c:GetHeight())) or "none")
+					.. ", laid out: " .. (lay and (math.floor(lay.width) .. "x" .. math.floor(lay.height)) or "never"))
 			elseif str == "help" then
 				-- Command list (chat output; legacy help window removed with the old UI)
 				local color1 = "|cffffffaa"
@@ -2621,10 +2632,14 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				local used = 0
 				for _, flow in ipairs(flows) do used = math.max(used, flow:Apply()) end
 				canvas:SetHeight(math.max(1, used))
+				RGXQoLLC.panelLayout = { width = canvas:GetWidth(), height = used, columns = #flows }
 			end
 			reflow()
 			canvas:HookScript("OnShow", reflow)
 			canvas:HookScript("OnSizeChanged", reflow)
+			-- The page can be built before the client has sized it; lay it out again once it has.
+			for _, delay in ipairs({ 0, 0.2, 0.6 }) do RGX:After(delay, reflow) end
+			RGXQoLLC.panelCanvas = canvas
 		end
 
 		local panel = RGXQoLLC:Themed(function() return UI:CreateOptionsPanel({
