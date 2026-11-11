@@ -2654,8 +2654,10 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
-			-- One page, no tab row: four cards, the shared options and vendors on the left, what is automated on the right.
-			content = function(frame)
+			-- One page: four cards, the shared options and vendors on the left, what is automated on the right.
+			-- It is a one-tab panel, the build every RGX mod's settings page uses. The framework's tab-less
+			-- "content =" form came up empty on the Blizzard Settings page, so it is not used.
+			tabs = { { text = L["Settings"], content = function(frame)
 				Grid(frame, {
 					function(host)
 						local general = Safe("General card", GeneralCard, host)
@@ -2685,10 +2687,13 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						return { questing, party }
 					end,
 				})
-			end,
+			end },
+			},
 		}) end)
 
 		RGXQoLLC.QoLPanel = panel
+		-- Only one tab, so the tab button adds nothing.
+		if panel and panel.tabs and panel.tabs[1] then panel.tabs[1]:Hide() end
 
 
 	end

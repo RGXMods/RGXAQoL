@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.20
+
+- The options appear on the Settings page again. 2.1.13 to 2.1.19 used the framework's tab-less page form, which came up empty there; the page is now built the way the other RGX mods build theirs (a single tab, with its button hidden).
+
 ## 2.1.19
 
 - The [AQoL] chat prefix uses the addon's primary brand colour instead of the default green.
