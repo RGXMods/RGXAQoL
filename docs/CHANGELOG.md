@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.16
+
+- The options page and chat prefix work on an older RGX-Framework. With a framework before 2.17.3 the General card was missing and the page came up empty; it is now built from the same switches in the addon, and chat lines keep the icon and [AQoL] prefix. Updating RGX-Framework to 2.17.3 is still recommended.
+
 ## 2.1.15
 
 - The welcome message prints on every login. It only printed the very first time the addon ran, so it never appeared again.
