@@ -11,6 +11,7 @@ ignore:
   - README.md
   - Changelog.txt
   - docs
+  - tests
   - .pkgmeta
 
 required-dependencies:
