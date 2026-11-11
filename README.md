@@ -1,12 +1,12 @@
 # RGX | AQoL
 
-**Another Quality of Life** — quality-of-life enhancements for WoW Forever and Classic Era, built on RGX-Framework.
+**Another Quality of Life** — quality-of-life enhancements for WoW Forever, built on RGX-Framework.
 
 The folder and saved variables are still `RGXQoL`; only the in-game name changed.
 
 ## Features
 
-- A three-tab options panel (`/qol`) built from RGX-Framework pages and cards: Character, Vendors, Addon.
+- A two-tab options panel (`/qol`) built from RGX-Framework pages and cards: Automation (Questing, Automation) and Utilities (Vendors, Addon), each a two-column card grid.
 - Flight-point data for Alliance and Horde routes.
 - Sound muting helpers.
 - Client guards for the WoW Forever (classic beta) API surface.
@@ -14,7 +14,6 @@ The folder and saved variables are still `RGXQoL`; only the in-game name changed
 ## Compatibility
 
 - WoW Forever (classic beta, interface `16001`)
-- Classic Era (interface `11509`)
 
 ### RGX Guides Quest-Automation Coexistence
 
