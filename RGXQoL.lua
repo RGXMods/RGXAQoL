@@ -2570,13 +2570,28 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			maxPerRow = 2,
 			tabs = {
 				{
+					-- The options every RGX mod shares, from the framework.
+					text = L["General"],
+					content = function(frame)
+						Grid(frame, {
+							function(host)
+								return UI:CreateStandardCard(host, {
+									storage = RGXQoLDB,
+									minimap = function() return RGXQoLLC.minimapButton end,
+									description = false,
+									prefix = false,
+								})
+							end,
+						})
+					end,
+				},
+				{
 					-- Everything the addon does for you, grouped by what it automates.
 					text = L["Automation"],
 					content = function(frame)
 						Grid(frame, {
 							function(host)
 								local questing = Card(host, L["Questing"])
-								Text(questing, L["Quests, gossip and the override key that gates them."])
 								Toggle(questing, L["Automate quests"], "automateQuests")
 								Toggle(questing, L["Accept available quests"], "autoQuestAvailable")
 								Toggle(questing, L["Turn in completed quests"], "autoQuestCompleted")
@@ -2586,7 +2601,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 								Toggle(questing, L["Automate gossip"], "automateGossip")
 
 								local vendors = Card(host, L["Vendors"])
-								Text(vendors, L["Automatic junk selling and gear repair at vendors."])
 								Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
 								Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
 								Toggle(vendors, L["Repair automatically"], "autoRepairGear")
@@ -2595,7 +2609,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 							end,
 							function(host)
 								local party = Card(host, L["Party and death"])
-								Text(party, L["Summons, resurrections and releasing your corpse."])
 								Toggle(party, L["Accept summon"], "autoAcceptSummon")
 								Toggle(party, L["Accept resurrection"], "autoAcceptRes")
 								Toggle(party, L["Skip combat resurrection"], "autoResNoCombat")
@@ -2603,21 +2616,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 								Toggle(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
 								Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
 								return party
-							end,
-						})
-					end,
-				},
-				{
-					-- The options every RGX mod shares, from the framework.
-					text = L["General"],
-					content = function(frame)
-						Grid(frame, {
-							function(host)
-								return UI:CreateStandardCard(host, {
-									storage = RGXQoLDB,
-									minimap = function() return RGXQoLLC.minimapButton end,
-									defaultPrefix = "RGX AQoL",
-								})
 							end,
 						})
 					end,

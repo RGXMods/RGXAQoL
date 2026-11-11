@@ -51,5 +51,10 @@ check(toc:find("IconTexture: Interface\\AddOns\\RGXQoL\\media\\icon.tga", 1, tru
 check(io.open("media/icon.tga") ~= nil, "media/icon.tga ships")
 check(io.open("RGXQoL.blp") == nil, "the unused sprite sheet is gone")
 check(not src:find("RGX-Framework\\\\media\\\\logo.tga", 1, true), "no framework logo used as the addon icon")
-check(toc:find("X-RGX-Framework-MinVersion: 2.17.0", 1, true), "the TOC requires the framework that has the standard card")
+check(toc:find("X-RGX-Framework-MinVersion: 2.17.1", 1, true), "the TOC requires the framework that has the standard card")
+
+-- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
+check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
+check(src:find("description = false", 1, true) and src:find("prefix = false", 1, true), "the standard card omits its description line and chat prefix box")
+check(src:find('text = L["General"]', 1, true) < src:find('text = L["Automation"]', 1, true), "General is the first tab")
 print("Options.test OK")

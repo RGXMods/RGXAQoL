@@ -1,5 +1,11 @@
 # RGX | AQoL
 
+## 2.1.10
+
+- General is the first tab and Automation the second, the same order as the other RGX mods (shared settings first).
+- Removed the description lines under the card titles so the options start right under the header and fit the cards.
+- Removed the chat prefix box: the chat prefix is not an AQoL option, chat keeps the RGX | AQoL prefix. Chat output and login message switches remain. Needs RGX-Framework 2.17.1.
+
 ## 2.1.9
 
 - The options are two tabs: Automation (questing, vendors, party and death) and General. Nothing is automation on the General tab any more.
