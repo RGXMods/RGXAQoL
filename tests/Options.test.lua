@@ -66,4 +66,5 @@ check(not src:find("FirstRunMessageSeen", 1, true) and src:find("RGXQoLLC.chat:L
 check(not src:find("compartment = RGXQoLDB", 1, true), "the Addons menu entry is always on")
 check(src:find('author = "DonnieDice"', 1, true) and src:find("cffffd700Mods", 1, true), "the panel header says RGX Mods by DonnieDice")
 check(src:find('local function Safe(name, fn, ...)', 1, true) and src:find('Safe("General card", GeneralCard, host)', 1, true) and src:find('Safe("override key", KeyChoice', 1, true), "a card that fails to build is reported and skipped")
+check(src:find("Loaded successfully. Type |cfffff569/qol help|r for commands.", 1, true) and src:find("|cffffff00Version:|r", 1, true), "the login message is the two-line RGX format with a version line")
 print("Options.test OK")
