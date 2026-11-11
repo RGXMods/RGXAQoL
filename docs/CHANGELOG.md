@@ -1,5 +1,11 @@
 # RGX | AQoL
 
+## 2.1.10
+
+- The options follow the RGX standard layout: General is the first tab and Automation the second, each a single column of full-width cards (Questing, Party and death, Vendors), the same as RGX Professions.
+- Removed the description lines under the card titles so the options start right under the header and fit the cards.
+- Chat lines use the standard RGX prefix, the AQoL icon then [AQoL]. The prefix is built in, so there is no prefix box. Chat output and login message switches remain. Needs RGX-Framework 2.17.2.
+
 ## 2.1.9
 
 - The options are two tabs: Automation (questing, vendors, party and death) and General. Nothing is automation on the General tab any more.
