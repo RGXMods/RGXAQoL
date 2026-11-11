@@ -1,5 +1,14 @@
 # RGX | AQoL
 
+## 2.1.9
+
+- The options are two tabs: Automation (questing, vendors, party and death) and General. Nothing is automation on the General tab any more.
+- The General tab is the framework's standard options card: minimap icon, Addons-menu entry, chat output, login message and chat prefix, the same on every RGX mod. Needs RGX-Framework 2.17.0.
+- Switch labels and sliders no longer run into their ON/OFF text or values.
+- Chat uses the shared prefix and respects the chat-output and login-message switches.
+- AQoL has its own icon (RGX red ring with a plus) in the Addons list, panel and minimap button.
+- Removed the "Use English language" setting and the reload button; the client language is always used.
+
 ## 2.1.8
 
 - The minimap button and `/qol` open the options panel again. Both called a variable that was declared further down the file, so the click did nothing.
