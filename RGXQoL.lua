@@ -184,6 +184,34 @@
 	function RGXQoLLC:Print(text)
 		DEFAULT_CHAT_FRAME:AddMessage(L[text], 1.0, 0.85, 0.0)
 	end
+
+	-- RGX brand, the same pair every RGX mod supplies: the primary red for rings and bars, a light grey
+	-- accent for titles and highlights. The framework's "RGX Material Round" style draws the panels.
+	RGXQoLLC.Brand = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.741, 0.765, 0.780 } }
+	-- "RGX | AQoL": a literal pipe is written "||" in a WoW string, so the pipe plus the colour reset is "|||r".
+	RGXQoLLC.BrandTitle = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"
+	RGXQoLLC.BRAND_STYLE = "materialround"
+
+	-- Run a builder in the RGX brand and style, restoring the framework theme afterwards.
+	function RGXQoLLC:Themed(fn)
+		local D = _G.RGXDesign
+		if not (D and D.WithTheme and D.WithStyle and D.ResolveStyle and D:ResolveStyle(self.BRAND_STYLE)) then
+			return fn()
+		end
+		local result
+		D:WithTheme(self.Brand, function()
+			D:WithStyle(self.BRAND_STYLE, function() result = fn() end)
+		end)
+		return result
+	end
+
+	-- Open the options panel (minimap button, /qol). Resolved at call time through the addon table:
+	-- a bare local declared further down this file is not visible to code written above it.
+	function RGXQoLLC:OpenOptions()
+		if not self.QoLPanel and self.BuildOptionsCanvas then self:BuildOptionsCanvas() end
+		local panel = self.QoLPanel
+		if panel and panel.Open then panel:Open() end
+	end
 	-- Load a string variable or set it to default if it's not set to "On" or "Off"
 	function RGXQoLLC:LoadVarChk(var, def)
 		if RGXQoLDB[var] and type(RGXQoLDB[var]) == "string" and RGXQoLDB[var] == "On" or RGXQoLDB[var] == "Off" then
@@ -1173,19 +1201,21 @@
 			if MM and not RGXQoLLC.minimapButton then
 				RGXQoLLC.minimapButton = MM:Create({
 					name = "RGXQoL_MinimapButton",
+					compartmentText = RGXQoLLC.BrandTitle,
 					icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
 					defaultAngle = 220,
 					storage = RGXQoLDB,
 					angleKey = "minimapAngle",
 					tooltip = {
-						title = "|cff8B1538RGX|r |cffffffffQoL|r",
+						title = RGXQoLLC.BrandTitle,
 						lines = {
+							{ left = "|cffffffffAnother Quality of Life|r" },
 							{ left = "|cff8B1538Left-Click|r", right = "|cffffffffOpen options|r" },
 							{ left = "|cff4ecdc4Left-Drag|r", right = "|cffffffffMove around minimap|r" },
 							{ left = "|cffe74c3cCtrl+Right-Click|r", right = "|cffffffffHide minimap icon|r" },
 						},
 					},
-					onLeftClick = function() if OpenOptionsShared then OpenOptionsShared() end end,
+					onLeftClick = function() RGXQoLLC:OpenOptions() end,
 					onCtrlRight = function(btn)
 						btn:SetVisible(false)
 						RGXQoLLC["ShowMinimapIcon"] = "Off"
@@ -1214,7 +1244,7 @@
 		-- Show first run message
 		if not RGXQoLDB["FirstRunMessageSeen"] then
 			RGX:After(1, function()
-				RGXQoLLC:Print(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open RGX QoL Plus."])
+				RGXQoLLC:Print(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open"] .. " " .. RGXQoLLC.BrandTitle .. ".")
 				RGXQoLDB["FirstRunMessageSeen"] = true
 			end)
 		end
@@ -2362,7 +2392,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			return
 		else
 				-- Open the framework-hosted options panel
-				if OpenOptionsShared then OpenOptionsShared() end
+				RGXQoLLC:OpenOptions()
 		end
 	end
 
@@ -2419,7 +2449,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 	local NumericBridgeKeys = { autoQuestKeyMenu = true, autoReleaseDelay = true }
 
 	local BridgeStore = {}
-	local OpenOptionsShared -- set by BuildOptionsCanvas, used by the minimap button
 	local ReloadButton, ReloadLabel
 
 	-- Read legacy strings into the bridge store (call after profile load)
@@ -2539,13 +2568,13 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			canvas:HookScript("OnSizeChanged", reflow)
 		end
 
-		local panel = UI:CreateOptionsPanel({
+		local panel = RGXQoLLC:Themed(function() return UI:CreateOptionsPanel({
 			addonName = "RGXQoL",
-			title = "RGX | AQoL",
+			title = RGXQoLLC.BrandTitle,
 			subtitle = L["Another Quality of Life"],
 			icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
-			theme = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.929, 0.420, 0.522 } },
+			theme = RGXQoLLC.Brand,
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
 			author = "RealmGX",
 			width = 820,
@@ -2620,13 +2649,10 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 					end,
 				},
 			},
-		})
+		}) end)
 
 		RGXQoLLC.QoLPanel = panel
 
-		OpenOptionsShared = function()
-			if panel and panel.Open then panel:Open() end
-		end
 
 	end
 
