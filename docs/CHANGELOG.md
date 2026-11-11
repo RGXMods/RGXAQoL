@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.21
+
+- The page now starts right under the panel header: the empty strip left by the hidden tab row is gone. Needs RGX-Framework 2.17.4; an older framework keeps the strip.
+
 ## 2.1.20
 
 - The options appear on the Settings page again. 2.1.13 to 2.1.19 used the framework's tab-less page form, which came up empty there; the page is now built the way the other RGX mods build theirs (a single tab, with its button hidden).

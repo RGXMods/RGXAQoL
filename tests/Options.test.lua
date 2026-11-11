@@ -51,7 +51,7 @@ local toc = read("RGXQoL.toc")
 check(toc:find("IconTexture: Interface\\AddOns\\RGX-Framework\\media\\logo.tga", 1, true), "the TOC uses the RGX-Framework icon")
 check(src:find("RGX-Framework\\\\media\\\\round.tga", 1, true) and src:find("RGX-Framework\\\\media\\\\square.tga", 1, true), "minimap and chat use round.tga, the panel uses square.tga")
 check(io.open("media/icon.tga") == nil and io.open("RGXQoL.blp") == nil, "AQoL ships no icon file of its own")
-check(toc:find("X-RGX-Framework-MinVersion: 2.17.3", 1, true), "the TOC requires the framework that has the standard card")
+check(toc:find("X-RGX-Framework-MinVersion: 2.17.4", 1, true), "the TOC requires the framework that has the standard card")
 
 -- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
@@ -70,4 +70,5 @@ check(src:find("Loaded successfully. Type |cfffff569/qol help|r for commands.", 
 check(src:find('CHAT_COLOR = "8B1538"', 1, true) and src:find("tagColor = CHAT_COLOR", 1, true), "the chat prefix uses the primary brand colour")
 check(src:find('RGX:After(delay, reflow)', 1, true) and src:find('str == "panel"', 1, true), "the page re-lays out after build and /qol panel reports its state")
 check(src:find("panel.tabs[1]:Hide()", 1, true), "the lone tab button is hidden")
+check(src:find("hideTabRow = true", 1, true), "the lone tab row is hidden so the page starts under the header")
 print("Options.test OK")
