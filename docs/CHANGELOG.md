@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.18
+
+- The login message is the two-line RGX format: "Loaded successfully. Type /qol help for commands." then "Version: vX.Y.Z", each under the icon and [AQoL] prefix. The version line was missing before.
+
 ## 2.1.17
 
 - A card that fails to build is reported in chat ("Options: ... failed to build") and skipped, so the rest of the page still shows instead of coming up empty.

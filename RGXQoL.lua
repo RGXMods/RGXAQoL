@@ -1262,10 +1262,12 @@
 		-- Final code for Player
 		----------------------------------------------------------------------
 
-		-- Welcome message on every login (the "Show welcome message" switch and the framework-wide login switch
-		-- silence it). It used to print only on the very first run, so players never saw it again.
+		-- Welcome message on every login, the two-line RGX format: line one says it loaded and how to get help, line
+		-- two is the version, each under the icon - [AQoL] prefix. The "Show welcome message" switch and the
+		-- framework-wide login switch silence both lines.
 		RGX:After(1, function()
-			RGXQoLLC.chat:Login(RGXQoLLC.BrandTitle .. " v" .. tostring(RGXQoLLC:GetAddonVersion()) .. " " .. L["loaded"] .. ". " .. L["Enter"] .. " |cff00ff00/qol|r " .. L["or click the minimap button to open"] .. ".")
+			RGXQoLLC.chat:Login("Loaded successfully. Type |cfffff569/qol help|r for commands.")
+			RGXQoLLC.chat:Login("|cffffff00Version:|r |cff8080ffv" .. tostring(RGXQoLLC:GetAddonVersion()):gsub("^v", "") .. "|r")
 		end)
 
 		-- Register logout event to save settings
