@@ -17,6 +17,7 @@
 ## OptionalDeps: ElvUI
 
 ## X-Curse-Project-ID: 1795243
+## X-WoWI-ID: 27305
 ## X-Website: https://github.com/RGXMods/RGXAQoL
 
 ## X-Discord: discord.gg/N7kdKAHVVF
