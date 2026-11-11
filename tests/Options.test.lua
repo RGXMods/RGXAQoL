@@ -29,15 +29,15 @@ check(src:find('BRAND_STYLE = "materialround"', 1, true), "the panel uses the Ma
 check(src:find('"|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"', 1, true), "the title escapes its pipe (|||r)")
 check(not src:find("QoL Plus", 1, true), "no leftover QoL Plus branding")
 
--- 3. Layout: two tabs (Automation, General); the General tab is the framework's standard card.
+-- 3. Layout (RGX standard, as RGX Professions): two tabs, General then Automation, each a single column of
+--    full-width cards stacked in the page flow; the General tab is the framework's standard card.
 local _, tabs = src:gsub("content = function%(frame%)", "")
 check(tabs == 2, "the panel has two tabs (" .. tabs .. ")")
-local _, grids = src:gsub("Grid%(frame, {", "")
-check(grids == 2, "each tab is a card grid (" .. grids .. ")")
-check(src:find('text = L["Automation"]', 1, true) and src:find('text = L["General"]', 1, true), "tabs are Automation and General")
+check(src:find('text = L["General"]', 1, true) < src:find('text = L["Automation"]', 1, true), "General is the first tab")
 check(not src:find('text = L["Utilities"]', 1, true), "no Utilities tab")
-check(src:find("UI:CreateColumns(canvas, #builders)", 1, true), "cards sit in framework columns")
-check(src:find("UI:CreateStandardCard(host", 1, true), "the General tab uses the framework's standard options card")
+check(not src:find("Grid(", 1, true) and not src:find("CreateColumns", 1, true) and not src:find("maxPerRow", 1, true), "no custom column grid")
+check(src:find("frame._rgxFlow:Add(card)", 1, true), "cards stack in the page flow")
+check(src:find("UI:CreateStandardCard(frame", 1, true), "the General tab uses the framework's standard options card")
 check(src:find("RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
 -- 4. Removed settings and the icon.
@@ -56,5 +56,4 @@ check(toc:find("X-RGX-Framework-MinVersion: 2.17.1", 1, true), "the TOC requires
 -- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
 check(src:find("description = false", 1, true) and src:find("prefix = false", 1, true), "the standard card omits its description line and chat prefix box")
-check(src:find('text = L["General"]', 1, true) < src:find('text = L["Automation"]', 1, true), "General is the first tab")
 print("Options.test OK")
