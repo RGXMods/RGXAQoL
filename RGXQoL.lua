@@ -2667,6 +2667,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
+			style = RGXQoLLC.BRAND_STYLE,	-- tab content built later keeps the RGX Material Round style (RGX-Framework 2.17.7+)
 			hideTabRow = true,	-- one page: the content starts right under the header (RGX-Framework 2.17.4+)
 			-- One page: four cards, the shared options and vendors on the left, what is automated on the right.
 			-- It is a one-tab panel, the build every RGX mod's settings page uses. The framework's tab-less
