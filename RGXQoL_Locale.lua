@@ -9,7 +9,6 @@ local function localeFunc(L, key) return key end
 local L = setmetatable({}, {__index = localeFunc})
 RGXQoLAddon.L = L
 
-if RGXQoLDB and RGXQoLDB.UseEnglishLanguage and RGXQoLDB.UseEnglishLanguage == "On" then return end
 
 -- Locale override (enUS, zhCN, zhTW, ruRU, koKR, deDE, esMX, frFR, itIT, ptBR)
 -- GameLocale = "enUS"

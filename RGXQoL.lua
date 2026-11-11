@@ -181,8 +181,16 @@
 ----------------------------------------------------------------------
 
 	-- Print text
+	-- Chat goes through the framework's shared chat helper: the standard "chat output", "login message" and
+	-- "chat prefix" options (see the General tab) apply to every line this addon prints.
+	RGXQoLLC.chat = RGX:CreateChat({
+		storage = function() return _G.RGXQoLDB end,
+		name = "RGX AQoL",
+		brand = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r",
+		tag = "[RGXQoL]",
+	})
 	function RGXQoLLC:Print(text)
-		DEFAULT_CHAT_FRAME:AddMessage(L[text], 1.0, 0.85, 0.0)
+		self.chat:Print(L[text])
 	end
 
 	-- RGX brand, the same pair every RGX mod supplies: the primary red for rings and bars, a light grey
@@ -1202,7 +1210,8 @@
 				RGXQoLLC.minimapButton = MM:Create({
 					name = "RGXQoL_MinimapButton",
 					compartmentText = RGXQoLLC.BrandTitle,
-					icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
+					icon = "Interface\\AddOns\\RGXQoL\\media\\icon.tga",
+					compartment = RGXQoLDB.addonMenu ~= false,
 					defaultAngle = 220,
 					storage = RGXQoLDB,
 					angleKey = "minimapAngle",
@@ -1218,18 +1227,15 @@
 					onLeftClick = function() RGXQoLLC:OpenOptions() end,
 					onCtrlRight = function(btn)
 						btn:SetVisible(false)
-						RGXQoLLC["ShowMinimapIcon"] = "Off"
+						RGXQoLDB.minimapIconEnabled = false
 					end,
 				})
 			end
 
-			-- Bridge the visibility toggle and apply it
-			RGXQoLLC.FeatureSetup.ShowMinimapIcon = function()
-				if RGXQoLLC.minimapButton then
-					RGXQoLLC.minimapButton:SetVisible(RGXQoLLC["ShowMinimapIcon"] == "On")
-				end
+			-- Apply the saved visibility (the General tab's standard options change it at runtime)
+			if RGXQoLLC.minimapButton then
+				RGXQoLLC.minimapButton:SetVisible(RGXQoLDB.minimapIconEnabled ~= false)
 			end
-			RGXQoLLC.FeatureSetup.ShowMinimapIcon()
 
 		end
 
@@ -1244,7 +1250,7 @@
 		-- Show first run message
 		if not RGXQoLDB["FirstRunMessageSeen"] then
 			RGX:After(1, function()
-				RGXQoLLC:Print(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open"] .. " " .. RGXQoLLC.BrandTitle .. ".")
+				RGXQoLLC.chat:Login(L["Enter"] .. " |cff00ff00" .. "/qol" .. "|r " .. L["or click the minimap button to open"] .. " " .. RGXQoLLC.BrandTitle .. ".")
 				RGXQoLDB["FirstRunMessageSeen"] = true
 			end)
 		end
@@ -1303,8 +1309,10 @@ local function eventHandler(event, arg1, arg2, ...)
 				RGXQoLLC:LoadVarChk("AutoRepairShowSummary", "On")			-- Repair show summary in chat
 
 				-- Settings
-				RGXQoLLC:LoadVarChk("ShowMinimapIcon", "On")				-- Show minimap button
-				RGXQoLLC:LoadVarChk("UseEnglishLanguage", "Off")			-- Use English language
+				-- The minimap icon moved to the framework's standard option keys (older saves used "ShowMinimapIcon")
+				if RGXQoLDB.minimapIconEnabled == nil and RGXQoLDB.ShowMinimapIcon == "Off" then RGXQoLDB.minimapIconEnabled = false end
+				RGXQoLDB.ShowMinimapIcon = nil
+				RGXQoLDB.UseEnglishLanguage = nil		-- the language option was removed; the client locale is always used
 
 
 
@@ -1349,8 +1357,6 @@ local function eventHandler(event, arg1, arg2, ...)
 			RGXQoLDB["AutoRepairShowSummary"] 	= RGXQoLLC["AutoRepairShowSummary"]
 
 			-- Settings
-			RGXQoLDB["ShowMinimapIcon"] 		= RGXQoLLC["ShowMinimapIcon"]
-			RGXQoLDB["UseEnglishLanguage"] 	= RGXQoLLC["UseEnglishLanguage"]
 
 
 
@@ -2355,9 +2361,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				RGXQoLDB["AutoSellExcludeList"] = ""			-- Sell junk exclusions list
 				RGXQoLDB["AutoRepairGear"] = "On"				-- Repair automatically
 
-				-- Settings
-				RGXQoLDB["UseEnglishLanguage"] = "On"			-- Use English language
-
 				-- Function to assign cooldowns
 				local function setIcon(pclass, pspec, sp1, pt1, sp2, pt2, sp3, pt3, sp4, pt4, sp5, pt5)
 					-- Set spell ID
@@ -2441,15 +2444,12 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		autoSellShowSummary   = "AutoSellShowSummary",
 		autoRepairGear        = "AutoRepairGear",
 		autoRepairShowSummary = "AutoRepairShowSummary",
-		showMinimapIcon       = "ShowMinimapIcon",
-		useEnglishLanguage    = "UseEnglishLanguage",
 	}
 
 	-- Bridge keys that carry numbers (not On/Off)
 	local NumericBridgeKeys = { autoQuestKeyMenu = true, autoReleaseDelay = true }
 
 	local BridgeStore = {}
-	local ReloadButton, ReloadLabel
 
 	-- Read legacy strings into the bridge store (call after profile load)
 	local function SyncBridgeFromLegacy()
@@ -2474,21 +2474,6 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		end
 		local setup = RGXQoLLC.FeatureSetup and RGXQoLLC.FeatureSetup[legacy]
 		if setup then setup() end
-		RGXQoLLC:ReloadCheck()
-	end
-
-	-- Reload-needed state drives the Addon card reload button
-	function RGXQoLLC:ReloadCheck()
-		local needs = (RGXQoLLC["UseEnglishLanguage"] ~= RGXQoLDB["UseEnglishLanguage"])
-		if ReloadButton then
-			if needs then
-				ReloadButton:Enable()
-				if ReloadLabel then ReloadLabel:Show() end
-			else
-				ReloadButton:Disable()
-				if ReloadLabel then ReloadLabel:Hide() end
-			end
-		end
 	end
 
 	function RGXQoLLC:BuildOptionsCanvas()
@@ -2515,7 +2500,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				color = "muted",
 				wrap = true,
 			})
-			card.flow:Add(w)
+			card.flow:Add(w, { fill = true })
 			return w
 		end
 
@@ -2527,7 +2512,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				default = BridgeStore[bkey],
 				onChange = function(value) OnBridgeChange(bkey, value) end,
 			})
-			card.flow:Add(w)
+			card.flow:Add(w, { fill = true })
 			return w
 		end
 
@@ -2542,20 +2527,23 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				default = BridgeStore[bkey],
 				suffix = suffix or "",
 			})
-			card.flow:Add(w)
+			card.flow:Add(w, { fill = true })
 			return w
 		end
 
-		-- builders[i](host) returns the card for column i; the columns share one scroll canvas.
+		-- builders[i](host) returns the card(s) for column i; the columns share one scroll canvas.
 		local function Grid(frame, builders)
 			local canvas = frame._rgxCanvas or frame
 			local hosts = { UI:CreateColumns(canvas, #builders) }
 			local flows = {}
 			for i, host in ipairs(hosts) do flows[i] = UI:CreateFlowLayout(host) end
 			for i, build in ipairs(builders) do
-				local card = build(hosts[i])
-				card:AutoHeight()
-				flows[i]:Add(card)
+				local cards = build(hosts[i])
+				if cards.AutoHeight then cards = { cards } end
+				for _, card in ipairs(cards) do
+					card:AutoHeight()
+					flows[i]:Add(card)
+				end
 			end
 			local function reflow()
 				if canvas:GetWidth() <= 0 then return end
@@ -2572,7 +2560,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			addonName = "RGXQoL",
 			title = RGXQoLLC.BrandTitle,
 			subtitle = L["Another Quality of Life"],
-			icon = "Interface\\AddOns\\RGX-Framework\\media\\logo.tga",
+			icon = "Interface\\AddOns\\RGXQoL\\media\\icon.tga",
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
 			theme = RGXQoLLC.Brand,
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
@@ -2582,6 +2570,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			maxPerRow = 2,
 			tabs = {
 				{
+					-- Everything the addon does for you, grouped by what it automates.
 					text = L["Automation"],
 					content = function(frame)
 						Grid(frame, {
@@ -2589,61 +2578,46 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 								local questing = Card(host, L["Questing"])
 								Text(questing, L["Quests, gossip and the override key that gates them."])
 								Toggle(questing, L["Automate quests"], "automateQuests")
-								Toggle(questing, L["Accept available quests automatically"], "autoQuestAvailable")
-								Toggle(questing, L["Turn-in completed quests automatically"], "autoQuestCompleted")
-								Toggle(questing, L["Require override key for quest automation"], "autoQuestShift")
-								Slider(questing, L["Override key"] .. " (1=SHIFT 2=ALT 3=CTRL 4=CMD)", "autoQuestKeyMenu", 1, 4, "")
+								Toggle(questing, L["Accept available quests"], "autoQuestAvailable")
+								Toggle(questing, L["Turn in completed quests"], "autoQuestCompleted")
+								Toggle(questing, L["Require override key"], "autoQuestShift")
+								Slider(questing, L["Override key"], "autoQuestKeyMenu", 1, 4, "")
+								Text(questing, L["1 Shift, 2 Alt, 3 Ctrl, 4 Cmd"])
 								Toggle(questing, L["Automate gossip"], "automateGossip")
-								return questing
+
+								local vendors = Card(host, L["Vendors"])
+								Text(vendors, L["Automatic junk selling and gear repair at vendors."])
+								Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
+								Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
+								Toggle(vendors, L["Repair automatically"], "autoRepairGear")
+								Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
+								return { questing, vendors }
 							end,
 							function(host)
-								local automation = Card(host, L["Automation"])
-								Text(automation, L["Summons, resurrections and releasing your corpse."])
-								Toggle(automation, L["Accept summon"], "autoAcceptSummon")
-								Toggle(automation, L["Accept resurrection"], "autoAcceptRes")
-								Toggle(automation, L["Exclude combat resurrection"], "autoResNoCombat")
-								Toggle(automation, L["Release in PvP"], "autoReleasePvP")
-								Toggle(automation, L["Exclude Alterac Valley"], "autoReleaseNoAlterac")
-								Slider(automation, L["Release delay"] .. " (ms)", "autoReleaseDelay", 200, 3000, "ms")
-								return automation
+								local party = Card(host, L["Party and death"])
+								Text(party, L["Summons, resurrections and releasing your corpse."])
+								Toggle(party, L["Accept summon"], "autoAcceptSummon")
+								Toggle(party, L["Accept resurrection"], "autoAcceptRes")
+								Toggle(party, L["Skip combat resurrection"], "autoResNoCombat")
+								Toggle(party, L["Release in PvP"], "autoReleasePvP")
+								Toggle(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
+								Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
+								return party
 							end,
 						})
 					end,
 				},
 				{
-					text = L["Utilities"],
+					-- The options every RGX mod shares, from the framework.
+					text = L["General"],
 					content = function(frame)
 						Grid(frame, {
 							function(host)
-								local vendors = Card(host, L["Vendors"])
-								Text(vendors, L["Automatic junk selling and gear repair at vendors."])
-								Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
-								Toggle(vendors, L["Show vendor summary in chat"], "autoSellShowSummary")
-								Toggle(vendors, L["Repair automatically"], "autoRepairGear")
-								Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
-								return vendors
-							end,
-							function(host)
-								local addon = Card(host, L["Addon"])
-								Text(addon, L["Minimap button, language and UI reload options."])
-								Toggle(addon, L["Show minimap button"], "showMinimapIcon")
-								Toggle(addon, L["Use English language"], "useEnglishLanguage")
-
-								-- The reload button sits in its own row so the flow does not stretch it.
-								local row = CreateFrame("Frame", nil, addon.content)
-								row:SetHeight(28)
-								ReloadButton = CreateFrame("Button", nil, row, "UIPanelButtonTemplate")
-								ReloadButton:SetSize(120, 22)
-								ReloadButton:SetText(L["Reload UI"])
-								ReloadButton:SetPoint("LEFT", row, "LEFT", 0, 0)
-								ReloadButton:SetScript("OnClick", function() ReloadUI() end)
-								ReloadLabel = row:CreateFontString(nil, "ARTWORK", "GameFontNormalSmall")
-								ReloadLabel:SetPoint("LEFT", ReloadButton, "RIGHT", 10, 0)
-								ReloadLabel:SetText(L["Your UI needs to be reloaded."])
-								ReloadLabel:Hide()
-								addon.flow:Add(row)
-								RGXQoLLC:ReloadCheck()
-								return addon
+								return UI:CreateStandardCard(host, {
+									storage = RGXQoLDB,
+									minimap = function() return RGXQoLLC.minimapButton end,
+									defaultPrefix = "RGX AQoL",
+								})
 							end,
 						})
 					end,

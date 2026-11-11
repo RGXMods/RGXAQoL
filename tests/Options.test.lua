@@ -29,11 +29,27 @@ check(src:find('BRAND_STYLE = "materialround"', 1, true), "the panel uses the Ma
 check(src:find('"|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"', 1, true), "the title escapes its pipe (|||r)")
 check(not src:find("QoL Plus", 1, true), "no leftover QoL Plus branding")
 
--- 3. Layout: exactly two tabs, each a two-column grid of cards.
+-- 3. Layout: two tabs (Automation, General); the General tab is the framework's standard card.
 local _, tabs = src:gsub("content = function%(frame%)", "")
 check(tabs == 2, "the panel has two tabs (" .. tabs .. ")")
 local _, grids = src:gsub("Grid%(frame, {", "")
 check(grids == 2, "each tab is a card grid (" .. grids .. ")")
-check(src:find('text = L["Automation"]', 1, true) and src:find('text = L["Utilities"]', 1, true), "tabs are Automation and Utilities")
+check(src:find('text = L["Automation"]', 1, true) and src:find('text = L["General"]', 1, true), "tabs are Automation and General")
+check(not src:find('text = L["Utilities"]', 1, true), "no Utilities tab")
 check(src:find("UI:CreateColumns(canvas, #builders)", 1, true), "cards sit in framework columns")
+check(src:find("UI:CreateStandardCard(host", 1, true), "the General tab uses the framework's standard options card")
+check(src:find("RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
+
+-- 4. Removed settings and the icon.
+check(not src:find("UseEnglishLanguage", 1, true) or src:find("RGXQoLDB.UseEnglishLanguage = nil", 1, true), "the English-language setting is gone")
+local _, n = src:gsub("UseEnglishLanguage", "")
+check(n == 1, "UseEnglishLanguage appears once, only to clear old saves (" .. n .. ")")
+check(not src:find("ReloadButton", 1, true) and not src:find("ReloadCheck", 1, true), "no reload button")
+check(not read("RGXQoL_Locale.lua"):find("UseEnglishLanguage", 1, true), "the locale file ignores no language override")
+local toc = read("RGXQoL.toc")
+check(toc:find("IconTexture: Interface\\AddOns\\RGXQoL\\media\\icon.tga", 1, true), "the TOC points at the addon's own icon")
+check(io.open("media/icon.tga") ~= nil, "media/icon.tga ships")
+check(io.open("RGXQoL.blp") == nil, "the unused sprite sheet is gone")
+check(not src:find("RGX-Framework\\\\media\\\\logo.tga", 1, true), "no framework logo used as the addon icon")
+check(toc:find("X-RGX-Framework-MinVersion: 2.17.0", 1, true), "the TOC requires the framework that has the standard card")
 print("Options.test OK")
