@@ -31,7 +31,7 @@ check(not src:find("QoL Plus", 1, true), "no leftover QoL Plus branding")
 
 -- 3. Layout: one page of four cards in two framework columns; the General card is the framework's standard card.
 local _, tabs = src:gsub("content = function%(frame%)", "")
-check(tabs == 1 and not src:find("tabs = {", 1, true), "the panel is a single page with no tab row (" .. tabs .. ")")
+check(tabs == 1 and src:find("tabs = { { text = L[\"Settings\"], content = function(frame)", 1, true) and not src:find("\n\t\t\tcontent = function(frame)", 1, true), "the page is a one-tab panel, not the tab-less content form (" .. tabs .. ")")
 check(src:find("Grid(frame, {", 1, true) and src:find("UI:CreateColumns(canvas, #builders)", 1, true), "the page is a two-column card grid")
 check(not src:find('text = L["Utilities"]', 1, true) and not src:find('text = L["Automation"]', 1, true), "no Utilities or Automation tab")
 check(src:find("UI:CreateStandardCard(host", 1, true) and src:find("if UI.CreateStandardCard then", 1, true), "the General card is the framework's standard card, with a local fallback for an older framework")
@@ -69,4 +69,5 @@ check(src:find('local function Safe(name, fn, ...)', 1, true) and src:find('Safe
 check(src:find("Loaded successfully. Type |cfffff569/qol help|r for commands.", 1, true) and src:find("|cffffff00Version:|r", 1, true), "the login message is the two-line RGX format with a version line")
 check(src:find('CHAT_COLOR = "8B1538"', 1, true) and src:find("tagColor = CHAT_COLOR", 1, true), "the chat prefix uses the primary brand colour")
 check(src:find('RGX:After(delay, reflow)', 1, true) and src:find('str == "panel"', 1, true), "the page re-lays out after build and /qol panel reports its state")
+check(src:find("panel.tabs[1]:Hide()", 1, true), "the lone tab button is hidden")
 print("Options.test OK")
