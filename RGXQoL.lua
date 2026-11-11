@@ -2582,6 +2582,24 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			return button
 		end
 
+		-- A card that fails to build is reported in chat and skipped, so one bad widget can never blank the page.
+		local function Safe(name, fn, ...)
+			local ok, result = pcall(fn, ...)
+			if not ok then
+				RGXQoLLC:Print("Options: " .. name .. " failed to build: " .. tostring(result))
+				return nil
+			end
+			return result
+		end
+		local function Cards(...)
+			local list = {}
+			for i = 1, select("#", ...) do
+				local card = select(i, ...)
+				if card then list[#list + 1] = card end
+			end
+			return list
+		end
+
 		-- builders[i](host) returns the card(s) for column i; the columns share one scroll canvas.
 		local function Grid(frame, builders)
 			local canvas = frame._rgxCanvas or frame
@@ -2589,7 +2607,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			local flows = {}
 			for i, host in ipairs(hosts) do flows[i] = UI:CreateFlowLayout(host) end
 			for i, build in ipairs(builders) do
-				local cards = build(hosts[i])
+				local cards = Safe("column " .. i, build, hosts[i]) or {}
 				if cards.AutoHeight then cards = { cards } end
 				for _, card in ipairs(cards) do
 					card:AutoHeight()
@@ -2623,13 +2641,13 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			content = function(frame)
 				Grid(frame, {
 					function(host)
-						local general = GeneralCard(host)
+						local general = Safe("General card", GeneralCard, host)
 						local vendors = Card(host, L["Vendors"])
 						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
 						Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
 						Toggle(vendors, L["Repair automatically"], "autoRepairGear")
 						Toggle(vendors, L["Show repair summary in chat"], "autoRepairShowSummary")
-						return { general, vendors }
+						return Cards(general, vendors)
 					end,
 					function(host)
 						local questing = Card(host, L["Questing"])
@@ -2638,7 +2656,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Toggle(questing, L["Turn in completed quests"], "autoQuestCompleted")
 						Toggle(questing, L["Automate gossip"], "automateGossip")
 						Toggle(questing, L["Require override key"], "autoQuestShift")
-						KeyChoice(questing, L["Override key"], "autoQuestKeyMenu")
+						Safe("override key", KeyChoice, questing, L["Override key"], "autoQuestKeyMenu")
 
 						local party = Card(host, L["Party and death"])
 						Toggle(party, L["Accept summon"], "autoAcceptSummon")

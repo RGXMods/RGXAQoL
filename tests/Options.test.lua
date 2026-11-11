@@ -38,7 +38,7 @@ check(src:find("UI:CreateStandardCard(host", 1, true) and src:find("if UI.Create
 local cards = select(2, src:gsub("= Card%(host, ", ""))
 check(cards == 4, "Vendors, Questing, Party and death and the fallback General are built here (" .. cards .. ")")
 check(src:find("GeneralCard(host)", 1, true), "the General card is the fourth card on the page")
-check(src:find("KeyChoice(questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
+check(src:find("KeyChoice, questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
 check(src:find("RGX.CreateChat and RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
 -- 4. Removed settings and the icon.
@@ -65,4 +65,5 @@ check(not src:find("loginMessage = false", 1, true) and src:find('login = L["Sho
 check(not src:find("FirstRunMessageSeen", 1, true) and src:find("RGXQoLLC.chat:Login(", 1, true), "the welcome message prints on every login, not only the first run")
 check(not src:find("compartment = RGXQoLDB", 1, true), "the Addons menu entry is always on")
 check(src:find('author = "DonnieDice"', 1, true) and src:find("cffffd700Mods", 1, true), "the panel header says RGX Mods by DonnieDice")
+check(src:find('local function Safe(name, fn, ...)', 1, true) and src:find('Safe("General card", GeneralCard, host)', 1, true) and src:find('Safe("override key", KeyChoice', 1, true), "a card that fails to build is reported and skipped")
 print("Options.test OK")
