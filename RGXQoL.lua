@@ -181,19 +181,30 @@
 ----------------------------------------------------------------------
 
 	-- Print text
-	-- Chat goes through the framework's shared chat helper: the standard "chat output", "login message" and
-	-- "chat prefix" options (see the General tab) apply to every line this addon prints.
-	RGXQoLLC.chat = (RGX.CreateChat or function() return {
-		-- RGX-Framework older than 2.17: plain chat so the addon still loads
-		Print = function(_, text) print("[AQoL] " .. tostring(text)) end,
-		Login = function(_, text) print("[AQoL] " .. tostring(text)) end,
-	} end)(RGX, {
+	-- Chat goes through the framework's shared chat helper (RGX-Framework 2.17.2+): the standard "chat output" and
+	-- "welcome message" options apply to every line this addon prints. On an older framework the same
+	-- "icon - [AQoL] message" line is built here from RGX:CreateChatPrefix, which has long existed.
+	local CHAT_ICON = "Interface\\AddOns\\RGX-Framework\\media\\round.tga"
+	local function FallbackChat()
+		local chat = {}
+		local function isOn(key) local db = _G.RGXQoLDB; return not (db and db[key] == false) end
+		function chat:Print(text)
+			if not isOn("chatOutput") then return end
+			local prefix = RGX.CreateChatPrefix and RGX:CreateChatPrefix({ icon = CHAT_ICON, tag = "AQoL" }) or "[AQoL]"
+			print(prefix .. " " .. tostring(text))
+		end
+		function chat:Login(text)
+			if isOn("loginMessage") then self:Print(text) end
+		end
+		return chat
+	end
+	RGXQoLLC.chat = RGX.CreateChat and RGX:CreateChat({
 		storage = function() return _G.RGXQoLDB end,
 		name = "RGX AQoL",
 		label = "AQoL",
-		icon = "Interface\\AddOns\\RGX-Framework\\media\\round.tga",
+		icon = CHAT_ICON,
 		tag = "[RGXQoL]",
-	})
+	}) or FallbackChat()
 	function RGXQoLLC:Print(text)
 		self.chat:Print(L[text])
 	end
@@ -2522,6 +2533,35 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			return w
 		end
 
+		-- General card: the framework's standard options card (2.17.3+); an older framework gets the same three
+		-- switches built here from canonical switches, bound to the same saved keys.
+		local function GeneralCard(host)
+			local labels = { chat = L["Show chat messages"], login = L["Show welcome message"] }
+			if UI.CreateStandardCard then
+				return UI:CreateStandardCard(host, {
+					storage = RGXQoLDB,
+					minimap = function() return RGXQoLLC.minimapButton end,
+					description = false,
+					prefix = false,
+					addonMenu = false,
+					labels = labels,
+				})
+			end
+			local card = Card(host, L["General"])
+			local function Switch(label, key, onChange)
+				card.flow:Add(UI:CreateSwitch(card.content, {
+					label = label, storage = RGXQoLDB, key = key, default = true, onChange = onChange,
+				}), { fill = true })
+			end
+			Switch(L["Show minimap button"], "minimapIconEnabled", function(value)
+				local button = RGXQoLLC.minimapButton
+				if button and button.SetVisible then button:SetVisible(value) end
+			end)
+			Switch(labels.chat, "chatOutput")
+			Switch(labels.login, "loginMessage")
+			return card
+		end
+
 		-- Override key: one compact button that cycles Shift, Alt, Ctrl, Cmd (a dropdown or slider would
 		-- not fit the card).
 		local function KeyChoice(card, label, bkey)
@@ -2583,14 +2623,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			content = function(frame)
 				Grid(frame, {
 					function(host)
-						local general = UI:CreateStandardCard(host, {
-							storage = RGXQoLDB,
-							minimap = function() return RGXQoLLC.minimapButton end,
-							description = false,
-							prefix = false,
-							addonMenu = false,
-							labels = { chat = L["Show chat messages"], login = L["Show welcome message"] },
-						})
+						local general = GeneralCard(host)
 						local vendors = Card(host, L["Vendors"])
 						Toggle(vendors, L["Sell junk automatically"], "autoSellJunk")
 						Toggle(vendors, L["Show sale summary in chat"], "autoSellShowSummary")
