@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.14
+
+- The panel header reads "RGX Mods" and "by DonnieDice", the same as the other RGX addons.
+
 ## 2.1.13
 
 - The options are a single page with no tab row, so the four cards use the whole panel.

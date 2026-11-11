@@ -2573,7 +2573,8 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.
 			theme = RGXQoLLC.Brand,
 			version = "v" .. tostring(RGXQoLLC:GetAddonVersion()),
-			author = "RealmGX",
+			author = "DonnieDice",
+			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
 			-- One page, no tab row: four cards, the shared options and vendors on the left, what is automated on the right.
