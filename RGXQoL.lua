@@ -186,7 +186,8 @@
 	RGXQoLLC.chat = RGX:CreateChat({
 		storage = function() return _G.RGXQoLDB end,
 		name = "RGX AQoL",
-		brand = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r",
+		label = "AQoL",
+		icon = "Interface\\AddOns\\RGXQoL\\media\\icon.tga",
 		tag = "[RGXQoL]",
 	})
 	function RGXQoLLC:Print(text)
