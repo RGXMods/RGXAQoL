@@ -51,7 +51,7 @@ local toc = read("RGXQoL.toc")
 check(toc:find("IconTexture: Interface\\AddOns\\RGX-Framework\\media\\logo.tga", 1, true), "the TOC uses the RGX-Framework icon")
 check(src:find("RGX-Framework\\\\media\\\\round.tga", 1, true) and src:find("RGX-Framework\\\\media\\\\square.tga", 1, true), "minimap and chat use round.tga, the panel uses square.tga")
 check(io.open("media/icon.tga") == nil and io.open("RGXQoL.blp") == nil, "AQoL ships no icon file of its own")
-check(toc:find("X-RGX-Framework-MinVersion: 2.17.4", 1, true), "the TOC requires the framework that has the standard card")
+check(toc:find("X-RGX-Framework-MinVersion: 2.17.7", 1, true), "the TOC requires the framework that has the standard card")
 
 -- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
@@ -78,4 +78,5 @@ check(not src:find("GetQuestLogIndexByID(arg1)\n\t\t\t\t\t\tif GetQuestLogIsAuto
 local sliderStart = src:find("local function Slider(card, label, bkey, min, max, suffix)", 1, true)
 local sliderBody = src:sub(sliderStart, src:find("\n\t\tend\n", sliderStart, true))
 check(sliderBody:find("onChange = function(value) OnBridgeChange(bkey, value) end", 1, true), "sliders push their value to the automation's legacy option")
+check(src:find("style = RGXQoLLC.BRAND_STYLE", 1, true), "the panel passes its interface style so lazily built tab content keeps it")
 print("Options.test OK")

@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.23
+
+- The options cards and controls are drawn in the RGX Material Round style. The page is built when the panel first opens, after the style scope had ended, so it was falling back to the default look. Needs RGX-Framework 2.17.7.
+
 ## 2.1.22
 
 - Quest and gossip automation works on RGX Forever again. It called `IsQuestComplete`, which Forever does not have, for every in-progress quest an NPC listed; that raised an error and stopped quest automation at any such NPC. It now uses `C_QuestLog.IsComplete`.

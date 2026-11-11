@@ -3,14 +3,14 @@
 ## Title: |cff8B1538RGX|r |cffffffffAQoL|r
 ## Notes: Another Quality of Life - quality of life enhancements for WoW Forever.
 
-## Version: 2.1.22
+## Version: 2.1.23
 ## X-DisplayName: RGX AQoL
 ## Author: DonnieDice
 ## Category: RealmGX
 ## Group: RealmGX
 ## SavedVariables: RGXQoLDB
 ## LoadSavedVariablesFirst: true
-## X-RGX-Framework-MinVersion: 2.17.4
+## X-RGX-Framework-MinVersion: 2.17.7
 ## RequiredDeps: RGX-Framework
 
 ## IconTexture: Interface\AddOns\RGX-Framework\media\logo.tga
