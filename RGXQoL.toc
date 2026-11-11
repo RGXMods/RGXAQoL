@@ -3,7 +3,7 @@
 ## Title: |cff8B1538RGX|r |cffffffffAQoL|r
 ## Notes: Another Quality of Life - quality of life enhancements for WoW Forever.
 
-## Version: 2.1.18
+## Version: 2.1.19
 ## X-DisplayName: RGX AQoL
 ## Author: DonnieDice
 ## Category: RealmGX

@@ -1,5 +1,11 @@
 # RGX | AQoL
 
+## 2.1.19
+
+- The [AQoL] chat prefix uses the addon's primary brand colour instead of the default green.
+- The options page lays itself out again shortly after it is built, in case the client had not sized it yet.
+- `/qol panel` prints whether the panel was built, its size and whether the framework's standard card is present, to diagnose an empty options page.
+
 ## 2.1.18
 
 - The login message is the two-line RGX format: "Loaded successfully. Type /qol help for commands." then "Version: vX.Y.Z", each under the icon and [AQoL] prefix. The version line was missing before.
