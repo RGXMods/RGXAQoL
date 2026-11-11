@@ -38,7 +38,7 @@ check(src:find("UI:CreateStandardCard(host", 1, true), "the General card is the 
 local cards = select(2, src:gsub("= Card%(host, ", ""))
 check(cards == 3, "Vendors, Questing and Party and death are cards, with General that makes four (" .. cards .. " own cards)")
 check(src:find("KeyChoice(questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
-check(src:find("RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
+check(src:find("RGX.CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
 -- 4. Removed settings and the icon.
 check(not src:find("UseEnglishLanguage", 1, true) or src:find("RGXQoLDB.UseEnglishLanguage = nil", 1, true), "the English-language setting is gone")
@@ -56,9 +56,11 @@ check(toc:find("X-RGX-Framework-MinVersion: 2.17.3", 1, true), "the TOC requires
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
 check(src:find("description = false", 1, true) and src:find("prefix = false", 1, true), "the standard card omits its description line and chat prefix box")
 check(src:find('label = "AQoL"', 1, true), "chat uses the [AQoL] label")
-local chatBlock = src:sub(src:find("RGXQoLLC.chat = RGX:CreateChat", 1, true), src:find("function RGXQoLLC:Print", 1, true))
+local chatBlock = src:sub(src:find("RGXQoLLC.chat = (RGX.CreateChat", 1, true), src:find("function RGXQoLLC:Print", 1, true))
 check(not chatBlock:find("brand", 1, true), "no custom brand string for chat")
-check(src:find("addonMenu = false", 1, true) and src:find("loginMessage = false", 1, true), "the Addons menu entry and login message are not options")
+check(src:find("addonMenu = false", 1, true), "the Addons menu entry is not an option")
+check(not src:find("loginMessage = false", 1, true) and src:find('login = L["Show welcome message"]', 1, true) and src:find('chat = L["Show chat messages"]', 1, true), "Show welcome message and Show chat messages are options")
+check(not src:find("FirstRunMessageSeen", 1, true) and src:find("RGXQoLLC.chat:Login(", 1, true), "the welcome message prints on every login, not only the first run")
 check(not src:find("compartment = RGXQoLDB", 1, true), "the Addons menu entry is always on")
 check(src:find('author = "DonnieDice"', 1, true) and src:find("cffffd700Mods", 1, true), "the panel header says RGX Mods by DonnieDice")
 print("Options.test OK")
