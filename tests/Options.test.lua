@@ -31,13 +31,13 @@ check(not src:find("QoL Plus", 1, true), "no leftover QoL Plus branding")
 
 -- 3. Layout: one page of four cards in two framework columns; the General card is the framework's standard card.
 local _, tabs = src:gsub("content = function%(frame%)", "")
-check(tabs == 1, "the panel is a single page (" .. tabs .. " tabs)")
+check(tabs == 1 and not src:find("tabs = {", 1, true), "the panel is a single page with no tab row (" .. tabs .. ")")
 check(src:find("Grid(frame, {", 1, true) and src:find("UI:CreateColumns(canvas, #builders)", 1, true), "the page is a two-column card grid")
 check(not src:find('text = L["Utilities"]', 1, true) and not src:find('text = L["Automation"]', 1, true), "no Utilities or Automation tab")
 check(src:find("UI:CreateStandardCard(host", 1, true), "the General card is the framework's standard options card")
 local cards = select(2, src:gsub("= Card%(host, ", ""))
 check(cards == 3, "Vendors, Questing and Party and death are cards, with General that makes four (" .. cards .. " own cards)")
-check(src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is a dropdown, not a slider")
+check(src:find("KeyChoice(questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
 check(src:find("RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
 -- 4. Removed settings and the icon.
