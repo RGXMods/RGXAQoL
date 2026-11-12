@@ -1,5 +1,13 @@
 # RGX | AQoL
 
+## 2.1.24
+
+Needs RGX-Framework 2.18.0.
+
+- Fixed the gossip automation failing on every gossip window ("bad argument #1 to tContains"): the list of NPCs it skips was declared after the handler that reads it.
+- The options page is five cards: Chat, Vendors, Minimap, Questing and Party and death. Each card has a switch in its header that turns the whole card on or off, and the options inside are tick boxes.
+- The Vendors and Party and death switches gate their features (selling, repairing, summon, resurrection, release); the Questing switch also gates gossip automation. Chat, the welcome message and the sale and repair summaries are in the Chat card.
+
 ## 2.1.23
 
 - The options cards and controls are drawn in the RGX Material Round style. The page is built when the panel first opens, after the style scope had ended, so it was falling back to the default look. Needs RGX-Framework 2.17.7.
