@@ -81,7 +81,7 @@ check(not src:find("GetQuestLogIndexByID(arg1)\n\t\t\t\t\t\tif GetQuestLogIsAuto
 local sliderStart = src:find("local function Slider(card, label, bkey, min, max, suffix)", 1, true)
 local sliderBody = src:sub(sliderStart, src:find("\n\t\tend\n", sliderStart, true))
 check(sliderBody:find("onChange = function(value) OnBridgeChange(bkey, value) end", 1, true), "sliders push their value to the automation's legacy option")
-check(src:find("style = RGXQoLLC.BRAND_STYLE", 1, true), "the panel passes its interface style so lazily built tab content keeps it")
+check(src:find("style = RGXQoLLC:ActiveStyle()", 1, true), "the panel passes its interface style (the framework choice, else Material Round) so lazily built tab content keeps it")
 print("Options.test OK")
 
 -- 7. Module switches gate the automation, and a forward-declared local cannot be nil in a handler.

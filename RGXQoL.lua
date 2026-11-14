@@ -228,15 +228,28 @@
 	RGXQoLLC.BrandTitle = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"
 	RGXQoLLC.BRAND_STYLE = "materialround"
 
-	-- Run a builder in the RGX brand and style, restoring the framework theme afterwards.
+	-- The interface style: the operator's framework choice while "Apply the framework theme to addons" is on,
+	-- otherwise the addon's own RGX Material Round. The brand colours stay the addon's own in every style.
+	function RGXQoLLC:ActiveStyle()
+		local D = _G.RGXDesign
+		local db = rawget(_G, "RGXFrameworkDB")
+		if type(db) == "table" and db.themeOverride ~= false and type(db.style) == "string" and D and D.ResolveStyle then
+			local id = D:ResolveStyle(db.style)
+			if id then return id end
+		end
+		return self.BRAND_STYLE
+	end
+
+	-- Run a builder in the RGX brand and the active style, restoring the framework theme afterwards.
 	function RGXQoLLC:Themed(fn)
 		local D = _G.RGXDesign
 		if not (D and D.WithTheme and D.WithStyle and D.ResolveStyle and D:ResolveStyle(self.BRAND_STYLE)) then
 			return fn()
 		end
+		local style = self:ActiveStyle()
 		local result
 		D:WithTheme(self.Brand, function()
-			D:WithStyle(self.BRAND_STYLE, function() result = fn() end)
+			D:WithStyle(style, function() result = fn() end)
 		end)
 		return result
 	end
@@ -2681,7 +2694,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			brand = "|cff8b4b5cRGX|r |cffffd700Mods|r",
 			width = 820,
 			height = 640,
-			style = RGXQoLLC.BRAND_STYLE,	-- tab content built later keeps the RGX Material Round style (RGX-Framework 2.17.7+)
+			style = RGXQoLLC:ActiveStyle(),	-- tab content built later keeps the RGX Material Round style (RGX-Framework 2.17.7+)
 			hideTabRow = true,	-- one page: the content starts right under the header (RGX-Framework 2.17.4+)
 			-- One page: five cards. Each card has a switch in its header that turns the whole card on or off, and tick
 			-- boxes for the options inside it.
