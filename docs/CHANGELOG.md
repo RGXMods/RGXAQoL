@@ -1,5 +1,11 @@
 # RGX | AQoL
 
+## 2.1.25
+
+Needs RGX-Framework 2.18.0.
+
+- The Minimap card no longer has a header switch. "Show minimap button" is a tick box inside the card, like the other options.
+
 ## 2.1.24
 
 Needs RGX-Framework 2.18.0.

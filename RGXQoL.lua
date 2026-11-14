@@ -2702,14 +2702,12 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Tick(vendors, L["Sell junk automatically"], "autoSellJunk")
 						Tick(vendors, L["Repair automatically"], "autoRepairGear")
 
-						-- Minimap: a module card whose switch is the minimap button (the Addons menu entry is always on).
-						local minimap = UI:CreateCard(host, { title = L["Minimap"], switch = {
-							storage = RGXQoLDB, key = "minimapIconEnabled", default = true,
-							onChange = function(value)
-								local button = RGXQoLLC.minimapButton
-								if button and button.SetVisible then button:SetVisible(value) end
-							end,
-						} })
+						-- Minimap: no header switch; the option is a tick box in the card.
+						local minimap = UI:CreateCard(host, { title = L["Minimap"] })
+						DbTick(minimap, L["Show minimap button"], "minimapIconEnabled", true, function(value)
+							local button = RGXQoLLC.minimapButton
+							if button and button.SetVisible then button:SetVisible(value) end
+						end)
 						return { chat, vendors, minimap }
 					end,
 					function(host)
