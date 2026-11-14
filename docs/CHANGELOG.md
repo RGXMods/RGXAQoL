@@ -1,5 +1,12 @@
 # RGX | AQoL
 
+## 2.1.25
+
+Needs RGX-Framework 2.18.0.
+
+- The options panel follows the framework interface style while "Apply the framework theme to addons" is on (it always used Material Round before). The brand colours stay AQoL's own.
+- The Minimap card no longer has a header switch. "Show minimap button" is a tick box inside the card, like the other options.
+
 ## 2.1.24
 
 Needs RGX-Framework 2.18.0.

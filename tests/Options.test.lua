@@ -34,13 +34,13 @@ local _, tabs = src:gsub("content = function%(frame%)", "")
 check(tabs == 1 and src:find("tabs = { { text = L[\"Settings\"], content = function(frame)", 1, true) and not src:find("\n\t\t\tcontent = function(frame)", 1, true), "the page is a one-tab panel, not the tab-less content form (" .. tabs .. ")")
 check(src:find("Grid(frame, {", 1, true) and src:find("UI:CreateColumns(canvas, #builders)", 1, true), "the page is a two-column card grid")
 check(not src:find('text = L["Utilities"]', 1, true) and not src:find('text = L["Automation"]', 1, true), "no Utilities or Automation tab")
--- Five module cards: Chat, Vendors, Minimap, Questing, Party and death. Each has a switch in its header
--- (the whole card on or off); the options inside are tick boxes, never switches.
+-- Five cards: Chat, Vendors, Questing and Party and death have a switch in their header (the whole card on or
+-- off); Minimap has none, only tick boxes (the button). Options are never switches.
 check(src:find("local function ModuleCard(host, title, bkey)", 1, true), "module cards share one builder")
-check(src:find("UI:CreateCard(host, { title = L[\"Chat\"], switch", 1, true) and src:find('ModuleCard(host, L["Vendors"], "moduleVendors")', 1, true) and src:find('ModuleCard(host, L["Questing"], "automateQuests")', 1, true) and src:find('ModuleCard(host, L["Party and death"], "moduleParty")', 1, true) and src:find('title = L["Minimap"], switch', 1, true), "Chat, Vendors, Minimap, Questing and Party and death each have a header switch")
+check(src:find("UI:CreateCard(host, { title = L[\"Chat\"], switch", 1, true) and src:find('ModuleCard(host, L["Vendors"], "moduleVendors")', 1, true) and src:find('ModuleCard(host, L["Questing"], "automateQuests")', 1, true) and src:find('ModuleCard(host, L["Party and death"], "moduleParty")', 1, true) and src:find('UI:CreateCard(host, { title = L["Minimap"] })', 1, true) and not src:find('title = L["Minimap"], switch', 1, true), "Chat, Vendors, Questing and Party and death each have a header switch")
 check(not src:find("UI:CreateSwitch(card.content", 1, true) and not src:find("local function Toggle(card", 1, true), "no switches inside cards: options are tick boxes")
 local ticks = select(2, src:gsub("\n%s+Tick%(", "\n")) + select(2, src:gsub("\n%s+DbTick%(", "\n"))
-check(ticks == 14, "14 tick boxes across the cards (" .. ticks .. ")")
+check(ticks == 15, "15 tick boxes across the cards (" .. ticks .. ")")
 check(src:find("KeyChoice, questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
 check(src:find("RGX.CreateChat and RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
@@ -81,7 +81,7 @@ check(not src:find("GetQuestLogIndexByID(arg1)\n\t\t\t\t\t\tif GetQuestLogIsAuto
 local sliderStart = src:find("local function Slider(card, label, bkey, min, max, suffix)", 1, true)
 local sliderBody = src:sub(sliderStart, src:find("\n\t\tend\n", sliderStart, true))
 check(sliderBody:find("onChange = function(value) OnBridgeChange(bkey, value) end", 1, true), "sliders push their value to the automation's legacy option")
-check(src:find("style = RGXQoLLC.BRAND_STYLE", 1, true), "the panel passes its interface style so lazily built tab content keeps it")
+check(src:find("style = RGXQoLLC:ActiveStyle()", 1, true), "the panel passes its interface style (the framework choice, else Material Round) so lazily built tab content keeps it")
 print("Options.test OK")
 
 -- 7. Module switches gate the automation, and a forward-declared local cannot be nil in a handler.
