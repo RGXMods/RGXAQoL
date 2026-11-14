@@ -237,20 +237,23 @@
 	-- The same title with the live primary in place of the RGX red (the pipe escape is unchanged).
 	local function MakeTitle() return BrandHex(RGXQoLLC.Brand.primary) .. RGXQoLLC.BrandTitle:sub(11) end
 
-	-- Resolve the colours and style to build with and return the style id.
-	function RGXQoLLC:RefreshBrand()
+	-- The addon's brand, registered with the framework: the own pair and Material Round, or the framework's main
+	-- colour and interface style while the beta global theme override is on. Panels built with it redraw live.
+	function RGXQoLLC:GetBrand()
 		local D = _G.RGXDesign
+		if not self.BrandObj and D and type(D.RegisterBrand) == "function" then
+			self.BrandObj = D:RegisterBrand("RGXQoL", self.OwnBrand, self.BRAND_STYLE)
+			self.BrandObj:OnChange(function() RGXQoLLC:RefreshBrand() end)
+		end
+		return self.BrandObj
+	end
+
+	-- Rewrite Brand and BrandTitle in place from the brand and return the style id to build in.
+	function RGXQoLLC:RefreshBrand()
+		local brand = self:GetBrand()
 		local own, live = self.OwnBrand, self.Brand
 		local theme, style
-		if D and type(D.ResolveAddonTheme) == "function" then
-			theme, style = D:ResolveAddonTheme(own, self.BRAND_STYLE)
-		else
-			-- A framework without ResolveAddonTheme: honour the saved style only while the override is on.
-			local db = rawget(_G, "RGXFrameworkDB")
-			if type(db) == "table" and db.themeOverride == true and type(db.style) == "string" and D and D.ResolveStyle then
-				style = D:ResolveStyle(db.style)
-			end
-		end
+		if brand then theme, style = brand:Resolve() end
 		theme = theme or own
 		local p, a = theme.primary or own.primary, theme.accent or own.accent
 		live.primary[1], live.primary[2], live.primary[3] = p[1], p[2], p[3]
@@ -265,18 +268,12 @@
 		return self:RefreshBrand()
 	end
 
-	-- Run a builder in the resolved brand and style, restoring the framework theme afterwards.
+	-- Run a builder in the brand (colours and style, restored afterwards); panels built inside follow changes live.
 	function RGXQoLLC:Themed(fn)
-		local D = _G.RGXDesign
-		local style = self:RefreshBrand()
-		if not (D and D.WithTheme and D.WithStyle and D.ResolveStyle and D:ResolveStyle(style)) then
-			return fn()
-		end
-		local result
-		D:WithTheme(self.Brand, function()
-			D:WithStyle(style, function() result = fn() end)
-		end)
-		return result
+		self:RefreshBrand()
+		local brand = self:GetBrand()
+		if not brand then return fn() end
+		return brand:Build(fn)
 	end
 
 	-- Open the options panel (minimap button, /qol). Resolved at call time through the addon table:
@@ -2708,8 +2705,10 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		end
 
 		local panel = RGXQoLLC:Themed(function() return UI:CreateOptionsPanel({
+			brand = RGXQoLLC:GetBrand(),
 			addonName = "RGXQoL",
-			title = RGXQoLLC.BrandTitle,
+			title = function() RGXQoLLC:RefreshBrand() return RGXQoLLC.BrandTitle end,
+			sidebarTitle = RGXQoLLC.BrandTitle,
 			subtitle = L["Another Quality of Life"],
 			icon = "Interface\\AddOns\\RGX-Framework\\media\\square.tga",
 			-- Design:SetTheme only accepts numeric colour tables; hex strings are ignored.

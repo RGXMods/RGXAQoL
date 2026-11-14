@@ -9,9 +9,13 @@ assert(loadstring("local RGXQoLLC = ...\n" .. src:sub(a, b - 1), "brand"))(RGXQo
 
 local GOLD, PURPLE = { 1, 0.843, 0 }, { 0.737, 0.435, 0.659 }
 local override = false
-_G.RGXDesign = { ResolveAddonTheme = function(_, brand, style)
-    if override then return { primary = GOLD, accent = PURPLE }, "forever" end
-    return { primary = brand.primary, accent = brand.accent }, style
+local listener
+_G.RGXDesign = { RegisterBrand = function(_, id, own, style)
+    return { id = id, OnChange = function(_, fn) listener = fn end, Build = function(_, fn) return fn() end,
+        Resolve = function()
+            if override then return { primary = GOLD, accent = PURPLE }, "forever" end
+            return { primary = own.primary, accent = own.accent }, style
+        end }
 end }
 local ring = RGXQoLLC.Brand.primary
 check(RGXQoLLC:RefreshBrand() == "materialround" and ring[1] == 0.545, "override off: own pair, Material Round")
@@ -24,9 +28,10 @@ check(RGXQoLLC.BrandTitle:find("|||r", 1, true), "the pipe stays escaped")
 override = false
 RGXQoLLC:RefreshBrand()
 check(ring[1] == 0.545 and RGXQoLLC.BrandTitle:find("|cff8B1538RGX|r", 1, true) == 1, "override off again: back to the own pair")
-_G.RGXDesign = { ResolveStyle = function(_, n) return n == "forever" and "forever" or nil end }
-_G.RGXFrameworkDB = { style = "forever" }
-check(RGXQoLLC:RefreshBrand() == "materialround", "older framework: an unset override is off")
-_G.RGXFrameworkDB.themeOverride = true
-check(RGXQoLLC:RefreshBrand() == "forever", "older framework: the saved style while the override is on")
+check(type(listener) == "function", "the brand listens for theme changes (the options panel redraws itself)")
+override = true
+listener()
+check(RGXQoLLC.BrandTitle:find("|cffFFD700RGX|r", 1, true) == 1, "a theme change re-colours the title live")
+local f2 = assert(io.open("RGXQoL.lua")); local full = f2:read("*a"); f2:close()
+check(full:find("brand = RGXQoLLC:GetBrand(),", 1, true), "the options panel is built with the brand")
 io.write("BrandOverride OK\n")
