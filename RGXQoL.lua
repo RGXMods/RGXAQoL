@@ -222,31 +222,56 @@
 	end
 
 	-- RGX brand, the same pair every RGX mod supplies: the primary red for rings and bars, a light grey
-	-- accent for titles and highlights. The framework's "RGX Material Round" style draws the panels.
+	-- accent for titles and highlights. OwnBrand never changes; Brand is the live pair windows read: the own
+	-- pair, or the framework's main colour while the beta global theme override is on (RefreshBrand rewrites
+	-- its values in place so every held reference follows).
+	RGXQoLLC.OwnBrand = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.741, 0.765, 0.780 } }
 	RGXQoLLC.Brand = { primary = { 0.545, 0.082, 0.220 }, accent = { 0.741, 0.765, 0.780 } }
-	-- "RGX | AQoL": a literal pipe is written "||" in a WoW string, so the pipe plus the colour reset is "|||r".
-	RGXQoLLC.BrandTitle = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"
 	RGXQoLLC.BRAND_STYLE = "materialround"
 
-	-- The interface style: the operator's framework choice while "Apply the framework theme to addons" is on,
-	-- otherwise the addon's own RGX Material Round. The brand colours stay the addon's own in every style.
-	function RGXQoLLC:ActiveStyle()
+	local function BrandHex(c)
+		return string.format("|cff%02X%02X%02X", math.floor(c[1] * 255 + 0.5), math.floor(c[2] * 255 + 0.5), math.floor(c[3] * 255 + 0.5))
+	end
+	-- "RGX | AQoL": a literal pipe is written "||" in a WoW string, so the pipe plus the colour reset is "|||r".
+	RGXQoLLC.BrandTitle = "|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"
+	-- The same title with the live primary in place of the RGX red (the pipe escape is unchanged).
+	local function MakeTitle() return BrandHex(RGXQoLLC.Brand.primary) .. RGXQoLLC.BrandTitle:sub(11) end
+
+	-- Resolve the colours and style to build with and return the style id.
+	function RGXQoLLC:RefreshBrand()
 		local D = _G.RGXDesign
-		local db = rawget(_G, "RGXFrameworkDB")
-		if type(db) == "table" and db.themeOverride ~= false and type(db.style) == "string" and D and D.ResolveStyle then
-			local id = D:ResolveStyle(db.style)
-			if id then return id end
+		local own, live = self.OwnBrand, self.Brand
+		local theme, style
+		if D and type(D.ResolveAddonTheme) == "function" then
+			theme, style = D:ResolveAddonTheme(own, self.BRAND_STYLE)
+		else
+			-- A framework without ResolveAddonTheme: honour the saved style only while the override is on.
+			local db = rawget(_G, "RGXFrameworkDB")
+			if type(db) == "table" and db.themeOverride == true and type(db.style) == "string" and D and D.ResolveStyle then
+				style = D:ResolveStyle(db.style)
+			end
 		end
-		return self.BRAND_STYLE
+		theme = theme or own
+		local p, a = theme.primary or own.primary, theme.accent or own.accent
+		live.primary[1], live.primary[2], live.primary[3] = p[1], p[2], p[3]
+		live.accent[1], live.accent[2], live.accent[3] = a[1], a[2], a[3]
+		self.BrandTitle = MakeTitle()
+		return style or self.BRAND_STYLE
 	end
 
-	-- Run a builder in the RGX brand and the active style, restoring the framework theme afterwards.
+	-- The interface style: the operator's framework choice while the beta theme override is on, otherwise the
+	-- addon's own RGX Material Round.
+	function RGXQoLLC:ActiveStyle()
+		return self:RefreshBrand()
+	end
+
+	-- Run a builder in the resolved brand and style, restoring the framework theme afterwards.
 	function RGXQoLLC:Themed(fn)
 		local D = _G.RGXDesign
-		if not (D and D.WithTheme and D.WithStyle and D.ResolveStyle and D:ResolveStyle(self.BRAND_STYLE)) then
+		local style = self:RefreshBrand()
+		if not (D and D.WithTheme and D.WithStyle and D.ResolveStyle and D:ResolveStyle(style)) then
 			return fn()
 		end
-		local style = self:ActiveStyle()
 		local result
 		D:WithTheme(self.Brand, function()
 			D:WithStyle(style, function() result = fn() end)
