@@ -1,5 +1,9 @@
 # RGX | AQoL
 
+## 2.1.26
+
+- The options follow the RGX-Framework theme override (beta, off by default) live: the framework's colour and style apply as soon as they change, without a reload. With the override off AQoL looks as before. Requires RGX-Framework 2.19.0.
+
 ## 2.1.25
 
 Needs RGX-Framework 2.18.0.
