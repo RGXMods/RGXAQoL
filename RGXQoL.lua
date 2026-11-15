@@ -2705,7 +2705,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		end
 
 		local panel = RGXQoLLC:Themed(function() return UI:CreateOptionsPanel({
-			brand = RGXQoLLC:GetBrand(),
+			addonBrand = RGXQoLLC:GetBrand(),
 			addonName = "RGXQoL",
 			title = function() RGXQoLLC:RefreshBrand() return RGXQoLLC.BrandTitle end,
 			sidebarTitle = RGXQoLLC.BrandTitle,

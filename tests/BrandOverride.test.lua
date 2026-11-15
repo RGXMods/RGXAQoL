@@ -33,5 +33,5 @@ override = true
 listener()
 check(RGXQoLLC.BrandTitle:find("|cffFFD700RGX|r", 1, true) == 1, "a theme change re-colours the title live")
 local f2 = assert(io.open("RGXQoL.lua")); local full = f2:read("*a"); f2:close()
-check(full:find("brand = RGXQoLLC:GetBrand(),", 1, true), "the options panel is built with the brand")
+check(full:find("addonBrand = RGXQoLLC:GetBrand(),", 1, true), "the options panel is built with the brand")
 io.write("BrandOverride OK\n")
