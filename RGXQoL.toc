@@ -14,7 +14,6 @@
 ## RequiredDeps: RGX-Framework
 
 ## IconTexture: Interface\AddOns\RGX-Framework\media\logo.tga
-## OptionalDeps: ElvUI
 
 ## X-Curse-Project-ID: 1795243
 ## X-WoWI-ID: 27305
