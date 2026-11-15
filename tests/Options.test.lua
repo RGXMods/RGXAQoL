@@ -54,7 +54,8 @@ local toc = read("RGXQoL.toc")
 check(toc:find("IconTexture: Interface\\AddOns\\RGX-Framework\\media\\logo.tga", 1, true), "the TOC uses the RGX-Framework icon")
 check(src:find("RGX-Framework\\\\media\\\\round.tga", 1, true) and src:find("RGX-Framework\\\\media\\\\square.tga", 1, true), "minimap and chat use round.tga, the panel uses square.tga")
 check(io.open("media/icon.tga") == nil and io.open("RGXQoL.blp") == nil, "AQoL ships no icon file of its own")
-check(toc:find("X-RGX-Framework-MinVersion: 2.18.0", 1, true), "the TOC requires the framework that has card header switches and bound tick boxes")
+local fwMaj, fwMin = toc:match("X%-RGX%-Framework%-MinVersion: (%d+)%.(%d+)")
+check(fwMaj and (tonumber(fwMaj) > 2 or (tonumber(fwMaj) == 2 and tonumber(fwMin) >= 19)), "the TOC requires the framework that has card header switches, bound tick boxes and the brand API (2.19.0 or newer)")
 
 -- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
