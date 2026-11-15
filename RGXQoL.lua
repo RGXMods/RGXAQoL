@@ -371,7 +371,7 @@
 	-- A feature runs only when its own option is "On" and its module switch is not "Off".
 	RGXQoLLC.ModuleOf = {
 		AutoSellJunk = "ModuleVendors", AutoRepairGear = "ModuleVendors",
-		AutoAcceptSummon = "ModuleParty", AutoAcceptRes = "ModuleParty", AutoReleasePvP = "ModuleParty",
+		AutoAcceptSummon = "ModuleParty", AutoAcceptRes = "ModuleParty", AutoReleasePvP = "ModuleParty", AutoSpiritRes = "ModuleParty",
 		AutomateGossip = "AutomateQuests",
 	}
 	function RGXQoLLC:On(key)
@@ -1275,6 +1275,31 @@
 		end
 
 		----------------------------------------------------------------------
+		-- Accept spirit healer resurrection
+		----------------------------------------------------------------------
+
+		do
+
+			-- The spirit healer's resurrection prompt (with or without resurrection sickness): accept it after a
+			-- short moment, unless the override key (shift) is held. Gated by the Party and death switch.
+			local SPIRIT_HEALER_DIALOGS = { XP_LOSS = true, XP_LOSS_NO_SICKNESS_NO_DURABILITY = true }
+			SafeHookSecure("StaticPopup_Show", function(sType)
+				if sType and SPIRIT_HEALER_DIALOGS[sType] and RGXQoLLC:On("AutoSpiritRes") then
+					RGX:After(0.2, function()
+						local dialog = StaticPopup_Visible(sType)
+						if not dialog then return end
+						if IsShiftKeyDown() then
+							ActionStatus_DisplayMessage(L["Spirit healer resurrection cancelled"], true)
+						else
+							StaticPopup_OnClick(_G[dialog], 1)
+						end
+					end)
+				end
+			end)
+
+		end
+
+		----------------------------------------------------------------------
 		--	Minimap button (framework module)
 		----------------------------------------------------------------------
 
@@ -1374,6 +1399,7 @@ local function eventHandler(event, arg1, arg2, ...)
 				RGXQoLLC:LoadVarChk("AutoAcceptRes", "Off")				-- Accept resurrection
 				RGXQoLLC:LoadVarChk("AutoResNoCombat", "On")				-- Accept resurrection exclude combat
 				RGXQoLLC:LoadVarChk("AutoReleasePvP", "Off")				-- Release in PvP
+				RGXQoLLC:LoadVarChk("AutoSpiritRes", "Off")				-- Accept spirit healer resurrection
 				RGXQoLLC:LoadVarChk("AutoReleaseNoAlterac", "Off")			-- Release in PvP Exclude Alterac Valley
 				RGXQoLLC:LoadVarNum("AutoReleaseDelay", 200, 200, 3000)	-- Release in PvP Delay
 
@@ -1424,6 +1450,7 @@ local function eventHandler(event, arg1, arg2, ...)
 			RGXQoLDB["AutoAcceptRes"] 			= RGXQoLLC["AutoAcceptRes"]
 			RGXQoLDB["AutoResNoCombat"] 		= RGXQoLLC["AutoResNoCombat"]
 			RGXQoLDB["AutoReleasePvP"] 		= RGXQoLLC["AutoReleasePvP"]
+			RGXQoLDB["AutoSpiritRes"] 		= RGXQoLLC["AutoSpiritRes"]
 			RGXQoLDB["AutoReleaseNoAlterac"] 	= RGXQoLLC["AutoReleaseNoAlterac"]
 			RGXQoLDB["AutoReleaseDelay"] 		= RGXQoLLC["AutoReleaseDelay"]
 
@@ -2445,6 +2472,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				RGXQoLDB["AutoAcceptSummon"] = "On"			-- Accept summon
 				RGXQoLDB["AutoAcceptRes"] = "On"				-- Accept resurrection
 				RGXQoLDB["AutoReleasePvP"] = "On"				-- Release in PvP
+				RGXQoLDB["AutoSpiritRes"] = "On"				-- Accept spirit healer resurrection
 				RGXQoLDB["AutoSellJunk"] = "On"				-- Sell junk automatically
 				RGXQoLDB["AutoSellExcludeList"] = ""			-- Sell junk exclusions list
 				RGXQoLDB["AutoRepairGear"] = "On"				-- Repair automatically
@@ -2528,6 +2556,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		autoAcceptRes         = "AutoAcceptRes",
 		autoResNoCombat       = "AutoResNoCombat",
 		autoReleasePvP        = "AutoReleasePvP",
+		autoSpiritRes         = "AutoSpiritRes",
 		autoReleaseNoAlterac  = "AutoReleaseNoAlterac",
 		autoReleaseDelay      = "AutoReleaseDelay",
 		autoSellJunk          = "AutoSellJunk",
@@ -2758,6 +2787,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Tick(party, L["Accept resurrection"], "autoAcceptRes")
 						Tick(party, L["Skip combat resurrection"], "autoResNoCombat")
 						Tick(party, L["Release in PvP"], "autoReleasePvP")
+						Tick(party, L["Accept spirit healer resurrection"], "autoSpiritRes")
 						Tick(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
 						Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
 						return { questing, party }

@@ -2,6 +2,7 @@
 
 ## 2.1.26
 
+- New in the Party and death card: **Accept spirit healer resurrection**. The spirit healer's resurrection prompt is accepted automatically (hold shift to cancel). Off by default.
 - The options follow the RGX-Framework theme override (beta, off by default) live: the framework's colour and style apply as soon as they change, without a reload. With the override off AQoL looks as before. Requires RGX-Framework 2.19.0.
 
 ## 2.1.25
