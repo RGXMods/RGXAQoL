@@ -159,8 +159,6 @@
 		end
 	end
 
-	-- Optional UI-skin integration
-	if C_AddOns.IsAddOnLoaded("ElvUI") then RGXQoLLC.ElvUI = unpack(ElvUI) end
 
 ----------------------------------------------------------------------
 --	L00: RGX QoL
