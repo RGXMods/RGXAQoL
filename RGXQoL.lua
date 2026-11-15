@@ -13,7 +13,7 @@
 	_G.RGXQoLDB = _G.RGXQoLDB or {}
 
 	-- Create locals
-	-- Create locals
+	local addonName, RGXQoLAddon = ...
 	local RGXQoLLC = {}
 	local RGX = assert(_G.RGXFramework, "RGX-Framework is required")
 	RGXQoLLC.FeatureSetup = {}          -- option -> setup hook, wired from feature blocks
@@ -140,7 +140,6 @@
 	RGXQoLLC["AddonVer"] = "2.0.0"
 
 	-- Get locale table
-	local void, RGXQoLAddon = ...
 	local L = RGXQoLAddon.L
 
 	-- Check Wow version is valid
@@ -465,6 +464,8 @@
 
 			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
 			local function OnGossipShow(event)
+				-- Resurrection gossip belongs to its own explicitly enabled feature.
+				if UnitIsGhost("player") then return end
 				-- Special treatment for specific NPCs
 				local npcGuid = UnitGUID("npc") or nil
 				if npcGuid and not IsShiftKeyDown() then
@@ -921,7 +922,7 @@
 							if RGXQoLLC["AutoQuestAvailable"] == "On" then
 								local GossipQuests = C_GossipInfo.GetAvailableQuests()
 								for titleIndex, questInfo in ipairs(GossipQuests) do
-									if questInfo.questID and DoesQuestHaveRequirementsMet(questInfo.questID) then
+									if questInfo.questID and DoesQuestHaveRequirementsMet(questInfo.title) then
 										return C_GossipInfo.SelectAvailableQuest(questInfo.questID)
 									end
 								end
@@ -1296,12 +1297,41 @@
 
 		do
 
+			-- This option owns the initial spirit-healer gossip as well as the
+			-- confirmation. It must not depend on the Questing/generic-gossip card.
+			local function OnSpiritHealerGossip()
+				if not RGXQoLLC:On("AutoSpiritRes") or IsShiftKeyDown() or not UnitIsGhost("player") then return end
+				-- The client's localized healer label identifies the standard NPC.
+				-- Never select arbitrary ghost gossip or guess from English menu text.
+				if type(SPIRIT_HEALER_RELEASE_RED) ~= "string" then return end
+				local healerName = SPIRIT_HEALER_RELEASE_RED:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+				if UnitName("npc") ~= healerName then return end
+				local options = RGX.API.GetGossipOptions()
+				if type(options) ~= "table" or #options ~= 1 then return end
+				local option = options[1]
+				if type(option.orderIndex) == "number" and C_GossipInfo and type(C_GossipInfo.SelectOptionByIndex) == "function" then
+					C_GossipInfo.SelectOptionByIndex(option.orderIndex)
+				elseif type(option.gossipOptionID) == "number" and C_GossipInfo and type(C_GossipInfo.SelectOption) == "function" then
+					C_GossipInfo.SelectOption(option.gossipOptionID)
+				end
+			end
+			local function SetupSpiritHealerEvents()
+				if RGXQoLLC:On("AutoSpiritRes") then
+					RGX:RegisterEvent("GOSSIP_SHOW", OnSpiritHealerGossip, "RGXQoL_SpiritHealer")
+				else
+					RGX:UnregisterEvent("GOSSIP_SHOW", "RGXQoL_SpiritHealer")
+				end
+			end
+			RGXQoLLC.FeatureSetup.AutoSpiritRes = SetupSpiritHealerEvents
+			SetupSpiritHealerEvents()
+
 			-- The spirit healer's resurrection prompt (with or without resurrection sickness): accept it after a
 			-- short moment, unless the override key (shift) is held. Gated by the Party and death switch.
 			-- With resurrection sickness the prompt carries its duration and the first Accept only asks again,
 			-- so that second prompt is accepted too.
 			local SPIRIT_HEALER_DIALOGS = { XP_LOSS = true, XP_LOSS_NO_SICKNESS = true, XP_LOSS_NO_SICKNESS_NO_DURABILITY = true }
 			local function Accept(sType, again)
+				if not RGXQoLLC:On("AutoSpiritRes") then return end
 				local dialog = StaticPopup_Visible(sType)
 				if not dialog then return end
 				if IsShiftKeyDown() then
@@ -1397,7 +1427,7 @@ local function eventHandler(event, arg1, arg2, ...)
 		----------------------------------------------------------------------
 
 		if event == "ADDON_LOADED" then
-			if arg1 == "RGXQoL" then
+			if arg1 == addonName then
 
 				-- Replace old var names with new ones
 				local function UpdateVars(oldvar, newvar)
@@ -1533,7 +1563,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 ----------------------------------------------------------------------
 	function RGXQoLLC:GetAddonVersion()
 		if C_AddOns and C_AddOns.GetAddOnMetadata then
-			local ok, v = pcall(C_AddOns.GetAddOnMetadata, "RGXQoL", "Version")
+			local ok, v = pcall(C_AddOns.GetAddOnMetadata, addonName, "Version")
 			if ok and v and v ~= "" then return v end
 		end
 		return RGXQoLLC["AddonVer"]
@@ -2827,4 +2857,3 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 
 
 	end
-

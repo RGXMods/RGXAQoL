@@ -6,10 +6,24 @@ The folder and saved variables are still `RGXQoL`; only the in-game name changed
 
 ## Features
 
-- A two-tab options panel (`/qol`) built from RGX-Framework pages and cards: Automation (Questing, Automation) and Utilities (Vendors, Addon), each a two-column card grid.
-- Flight-point data for Alliance and Horde routes.
-- Sound muting helpers.
-- Client guards for the WoW Forever (classic beta) API surface.
+- One framework-hosted settings page (`/qol`) with Chat, Vendors, Minimap, Questing, and Party and death cards.
+- Optional quest acceptance, quest turn-in, and gossip automation with an override key.
+- Automatic junk sales and repairs, with optional chat summaries.
+- Optional summon and resurrection acceptance, PvP/open-world release, and spirit-healer resurrection.
+
+### Quest and resurrection automation
+
+Turn on the **Questing** card and **Accept available quests** to accept quests
+automatically. **Require override key** reverses the selected key's behavior:
+when enabled, hold the key to automate; otherwise, hold it to pause automation.
+Quest exclusions and item/gold requirements still apply.
+
+**Accept spirit healer resurrection** belongs to **Party and death**, not
+Questing. It selects the standard, client-localized Spirit Healer's single
+gossip choice and then accepts the resurrection confirmation, including its
+second sickness confirmation. Hold Shift to cancel. Unrelated NPCs and
+ambiguous multiple-choice menus remain manual. Turning the option or its card
+off also cancels pending automatic confirmation.
 
 ## Compatibility
 
