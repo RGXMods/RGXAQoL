@@ -371,7 +371,7 @@
 	-- A feature runs only when its own option is "On" and its module switch is not "Off".
 	RGXQoLLC.ModuleOf = {
 		AutoSellJunk = "ModuleVendors", AutoRepairGear = "ModuleVendors",
-		AutoAcceptSummon = "ModuleParty", AutoAcceptRes = "ModuleParty", AutoReleasePvP = "ModuleParty", AutoSpiritRes = "ModuleParty",
+		AutoAcceptSummon = "ModuleParty", AutoAcceptRes = "ModuleParty", AutoReleasePvP = "ModuleParty", AutoReleaseWorld = "ModuleParty", AutoSpiritRes = "ModuleParty",
 		AutomateGossip = "AutomateQuests",
 	}
 	function RGXQoLLC:On(key)
@@ -1240,35 +1240,51 @@
 		end
 
 		----------------------------------------------------------------------
-		-- Automatically release in battlegrounds
+		-- Automatically release (battlegrounds, and optionally the open world)
 		----------------------------------------------------------------------
 
 		do
 
-			-- Release in battlegrounds
+			-- The release button is disabled while falling, during an encounter that holds releases, or under a
+			-- no-release aura; clicking then would do nothing, so wait until it is usable (up to 20 seconds).
+			local function ReleaseReady(frame)
+				local button = (frame.GetButton1 and frame:GetButton1()) or frame.button1
+				return not (button and button.IsEnabled) or button:IsEnabled()
+			end
+
+			local function TryRelease(attempt)
+				local dialog = StaticPopup_Visible("DEATH")
+				if not dialog then return end
+				if IsShiftKeyDown() then
+					ActionStatus_DisplayMessage(L["Automatic Release Cancelled"], true)
+					return
+				end
+				local frame = _G[dialog]
+				if not ReleaseReady(frame) then
+					if attempt < 40 then RGX:After(0.5, function() TryRelease(attempt + 1) end) end
+					return
+				end
+				StaticPopup_OnClick(frame, 1)
+			end
+
+			-- Which release options apply where you died. Hardcore deaths use their own dialog and are never touched.
+			local function ShouldRelease()
+				local selfRes = C_DeathInfo and C_DeathInfo.GetSelfResurrectOptions and C_DeathInfo.GetSelfResurrectOptions()
+				if selfRes and #selfRes > 0 then return false end -- soulstone, reincarnation and the like
+				if ResurrectGetOfferer and ResurrectGetOfferer() then return false end
+				local inInstance, instanceType = IsInInstance()
+				if inInstance and instanceType == "pvp" then
+					if not RGXQoLLC:On("AutoReleasePvP") then return false end
+					local mapID = C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player")
+					if mapID == 1459 and RGXQoLLC["AutoReleaseNoAlterac"] == "On" then return false end -- Alterac Valley
+					return true
+				end
+				return not inInstance and RGXQoLLC:On("AutoReleaseWorld")
+			end
+
 			SafeHookSecure("StaticPopup_Show", function(sType)
-				if sType and sType == "DEATH" and RGXQoLLC:On("AutoReleasePvP") then
-					if C_DeathInfo.GetSelfResurrectOptions() and #C_DeathInfo.GetSelfResurrectOptions() > 0 then return end
-					local InstStat, InstType = IsInInstance()
-					if InstStat and InstType == "pvp" then
-						-- Exclude specific maps
-						local mapID = C_Map.GetBestMapForUnit("player") or nil
-						if mapID then
-							if mapID == 1459 and RGXQoLLC["AutoReleaseNoAlterac"] == "On" then return end -- Alterac Valley
-						end
-						-- Release automatically
-						local delay = RGXQoLLC["AutoReleaseDelay"] / 1000
-						RGX:After(delay, function()
-							local dialog = StaticPopup_Visible("DEATH")
-							if dialog then
-								if IsShiftKeyDown() then
-									ActionStatus_DisplayMessage(L["Automatic Release Cancelled"], true)
-								else
-									StaticPopup_OnClick(_G[dialog], 1)
-								end
-							end
-						end)
-					end
+				if sType == "DEATH" and ShouldRelease() then
+					RGX:After((RGXQoLLC["AutoReleaseDelay"] or 200) / 1000, function() TryRelease(1) end)
 				end
 			end)
 
@@ -1282,18 +1298,22 @@
 
 			-- The spirit healer's resurrection prompt (with or without resurrection sickness): accept it after a
 			-- short moment, unless the override key (shift) is held. Gated by the Party and death switch.
-			local SPIRIT_HEALER_DIALOGS = { XP_LOSS = true, XP_LOSS_NO_SICKNESS_NO_DURABILITY = true }
-			SafeHookSecure("StaticPopup_Show", function(sType)
+			-- With resurrection sickness the prompt carries its duration and the first Accept only asks again,
+			-- so that second prompt is accepted too.
+			local SPIRIT_HEALER_DIALOGS = { XP_LOSS = true, XP_LOSS_NO_SICKNESS = true, XP_LOSS_NO_SICKNESS_NO_DURABILITY = true }
+			local function Accept(sType, again)
+				local dialog = StaticPopup_Visible(sType)
+				if not dialog then return end
+				if IsShiftKeyDown() then
+					ActionStatus_DisplayMessage(L["Spirit healer resurrection cancelled"], true)
+					return
+				end
+				StaticPopup_OnClick(_G[dialog], 1)
+				if again then RGX:After(0.2, function() Accept(sType, false) end) end
+			end
+			SafeHookSecure("StaticPopup_Show", function(sType, _, _, data)
 				if sType and SPIRIT_HEALER_DIALOGS[sType] and RGXQoLLC:On("AutoSpiritRes") then
-					RGX:After(0.2, function()
-						local dialog = StaticPopup_Visible(sType)
-						if not dialog then return end
-						if IsShiftKeyDown() then
-							ActionStatus_DisplayMessage(L["Spirit healer resurrection cancelled"], true)
-						else
-							StaticPopup_OnClick(_G[dialog], 1)
-						end
-					end)
+					RGX:After(0.2, function() Accept(sType, data ~= nil) end)
 				end
 			end)
 
@@ -1399,6 +1419,7 @@ local function eventHandler(event, arg1, arg2, ...)
 				RGXQoLLC:LoadVarChk("AutoAcceptRes", "Off")				-- Accept resurrection
 				RGXQoLLC:LoadVarChk("AutoResNoCombat", "On")				-- Accept resurrection exclude combat
 				RGXQoLLC:LoadVarChk("AutoReleasePvP", "Off")				-- Release in PvP
+				RGXQoLLC:LoadVarChk("AutoReleaseWorld", "Off")				-- Release in the open world
 				RGXQoLLC:LoadVarChk("AutoSpiritRes", "Off")				-- Accept spirit healer resurrection
 				RGXQoLLC:LoadVarChk("AutoReleaseNoAlterac", "Off")			-- Release in PvP Exclude Alterac Valley
 				RGXQoLLC:LoadVarNum("AutoReleaseDelay", 200, 200, 3000)	-- Release in PvP Delay
@@ -1450,6 +1471,7 @@ local function eventHandler(event, arg1, arg2, ...)
 			RGXQoLDB["AutoAcceptRes"] 			= RGXQoLLC["AutoAcceptRes"]
 			RGXQoLDB["AutoResNoCombat"] 		= RGXQoLLC["AutoResNoCombat"]
 			RGXQoLDB["AutoReleasePvP"] 		= RGXQoLLC["AutoReleasePvP"]
+			RGXQoLDB["AutoReleaseWorld"] 		= RGXQoLLC["AutoReleaseWorld"]
 			RGXQoLDB["AutoSpiritRes"] 		= RGXQoLLC["AutoSpiritRes"]
 			RGXQoLDB["AutoReleaseNoAlterac"] 	= RGXQoLLC["AutoReleaseNoAlterac"]
 			RGXQoLDB["AutoReleaseDelay"] 		= RGXQoLLC["AutoReleaseDelay"]
@@ -2556,6 +2578,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		autoAcceptRes         = "AutoAcceptRes",
 		autoResNoCombat       = "AutoResNoCombat",
 		autoReleasePvP        = "AutoReleasePvP",
+		autoReleaseWorld      = "AutoReleaseWorld",
 		autoSpiritRes         = "AutoSpiritRes",
 		autoReleaseNoAlterac  = "AutoReleaseNoAlterac",
 		autoReleaseDelay      = "AutoReleaseDelay",
@@ -2787,6 +2810,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Tick(party, L["Accept resurrection"], "autoAcceptRes")
 						Tick(party, L["Skip combat resurrection"], "autoResNoCombat")
 						Tick(party, L["Release in PvP"], "autoReleasePvP")
+						Tick(party, L["Release in the open world"], "autoReleaseWorld")
 						Tick(party, L["Accept spirit healer resurrection"], "autoSpiritRes")
 						Tick(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
 						Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")

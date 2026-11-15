@@ -2,7 +2,9 @@
 
 ## 2.1.26
 
-- New in the Party and death card: **Accept spirit healer resurrection**. The spirit healer's resurrection prompt is accepted automatically (hold shift to cancel). Off by default.
+- New in the Party and death card: **Accept spirit healer resurrection**. The spirit healer's resurrection prompt is accepted automatically, including the second "are you sure" prompt that comes with resurrection sickness (hold shift to cancel). Off by default.
+- New in the Party and death card: **Release in the open world**. Releases your spirit automatically when you die outside instances; never in dungeons or raids, never when a soulstone or other self-resurrection is available or a resurrection is on offer, never for hardcore deaths, and shift cancels it. Off by default. "Release in PvP" still covers battlegrounds.
+- Automatic release waits until the release button is usable (while falling, or under an effect that holds releases) instead of trying too early.
 - The options follow the RGX-Framework theme override (beta, off by default) live: the framework's colour and style apply as soon as they change, without a reload. With the override off AQoL looks as before. Requires RGX-Framework 2.19.0.
 
 ## 2.1.25

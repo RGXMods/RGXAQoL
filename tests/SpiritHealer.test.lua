@@ -26,6 +26,16 @@ clicked = nil; hook("DEATH")
 check(clicked == nil, "other dialogs are left alone")
 shift = true; hook("XP_LOSS")
 check(clicked == nil and said == "Spirit healer resurrection cancelled", "holding shift cancels it")
+-- With resurrection sickness the prompt carries its duration and asks again after the first Accept.
+local count = 0
+env.StaticPopup_OnClick = function() count = count + 1 end
+hook("XP_LOSS", nil, nil, 600)
+check(count == 0 and said == "Spirit healer resurrection cancelled", "shift cancels the sickness prompt too")
+shift = false; hook("XP_LOSS", nil, nil, 600)
+check(count == 2, "the second confirmation is accepted too (" .. count .. ")")
+count = 0; hook("XP_LOSS")
+check(count == 1, "no second click without the sickness duration")
+env.StaticPopup_OnClick = function(dialog, i) clicked = { dialog, i } end
 shift, on = false, false; hook("XP_LOSS")
 check(clicked == nil, "option off (or its card switched off): nothing happens")
 local opts = src:find('Tick(party, L["Accept spirit healer resurrection"], "autoSpiritRes")', 1, true)

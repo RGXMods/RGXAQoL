@@ -40,7 +40,7 @@ check(src:find("local function ModuleCard(host, title, bkey)", 1, true), "module
 check(src:find("UI:CreateCard(host, { title = L[\"Chat\"], switch", 1, true) and src:find('ModuleCard(host, L["Vendors"], "moduleVendors")', 1, true) and src:find('ModuleCard(host, L["Questing"], "automateQuests")', 1, true) and src:find('ModuleCard(host, L["Party and death"], "moduleParty")', 1, true) and src:find('UI:CreateCard(host, { title = L["Minimap"] })', 1, true) and not src:find('title = L["Minimap"], switch', 1, true), "Chat, Vendors, Questing and Party and death each have a header switch")
 check(not src:find("UI:CreateSwitch(card.content", 1, true) and not src:find("local function Toggle(card", 1, true), "no switches inside cards: options are tick boxes")
 local ticks = select(2, src:gsub("\n%s+Tick%(", "\n")) + select(2, src:gsub("\n%s+DbTick%(", "\n"))
-check(ticks == 16, "16 tick boxes across the cards (" .. ticks .. ")")
+check(ticks == 17, "17 tick boxes across the cards (" .. ticks .. ")")
 check(src:find("KeyChoice, questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
 check(src:find("RGX.CreateChat and RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
