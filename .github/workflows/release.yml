@@ -1,7 +1,7 @@
 name: Package and Release
 
-# Packages tagged commits with the BigWigs packager and publishes to GitHub,
-# CurseForge, Wago and WoWInterface. A site is skipped when its project ID
+# Packages tagged commits with the in-house packager (tools/release) and
+# publishes to GitHub, CurseForge, Wago and WoWInterface. A site is skipped when its project ID
 # (X-Curse-Project-ID, X-Wago-ID, X-WoWI-ID in RGXQoL.toc) or its token secret
 # is missing.
 
@@ -33,13 +33,44 @@ jobs:
             exit 1
           fi
 
-      - name: Package and release
-        uses: BigWigsMods/packager@master
+      - name: Write release notes
+        shell: bash
+        run: |
+          version="$(grep -oP '^## Version:\s*\K.*' RGXQoL.toc | tr -d '\r')"
+          awk -v v="## ${version#v}" '$0 == v { on=1; next } /^## / && on { exit } on' docs/CHANGELOG.md > "${RUNNER_TEMP}/release-notes.md"
+          [[ -s "${RUNNER_TEMP}/release-notes.md" ]] || echo "See the release page." > "${RUNNER_TEMP}/release-notes.md"
+
+      - name: Build package
+        run: node tools/release/packager.mjs --toc RGXQoL.toc --out artifacts
+
+      - name: Publish release
+        shell: bash
         env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CF_API_KEY: ${{ secrets.CF_API_KEY }}
           WAGO_API_TOKEN: ${{ secrets.WAGO_API_TOKEN }}
+        run: |
+          tag="${GITHUB_REF#refs/tags/}"
+          case "$tag" in *-alpha*) type=alpha ;; *-beta*) type=beta ;; *) type=release ;; esac
+          version="$(grep -oP '^## Version:\s*\K.*' RGXQoL.toc | tr -d '\r')"
+          node tools/release/publish-release.mjs \
+            --toc RGXQoL.toc \
+            --archive "artifacts/RGXQoL-v${version#v}.zip" \
+            --tag "$tag" \
+            --release-type "$type" \
+            --changelog-file "${RUNNER_TEMP}/release-notes.md" \
+            --out artifacts
+
+      - name: Publish to WoWInterface
+        shell: bash
+        env:
           WOWI_API_TOKEN: ${{ secrets.WOWI_API_TOKEN }}
-          GITHUB_OAUTH: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version="$(grep -oP '^## Version:\s*\K.*' RGXQoL.toc | tr -d '\r')"
+          node tools/release/publish-wowinterface.mjs \
+            --toc RGXQoL.toc \
+            --archive "artifacts/RGXQoL-v${version#v}.zip" \
+            --changelog-file "${RUNNER_TEMP}/release-notes.md"
 
       - name: Discord notification
         if: ${{ success() }}
