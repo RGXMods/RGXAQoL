@@ -2648,6 +2648,9 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		else
 			RGXQoLLC[legacy] = value and "On" or "Off"
 		end
+		-- Settings are durable as soon as the framework control changes them.
+		-- Logout remains a compatibility flush, not the sole save opportunity.
+		RGXQoLDB[legacy] = RGXQoLLC[legacy]
 		local setup = RGXQoLLC.FeatureSetup and RGXQoLLC.FeatureSetup[legacy]
 		if setup then setup() end
 		-- A module switch re-applies every feature in its card (events register or unregister now).
@@ -2777,7 +2780,11 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				if canvas:GetWidth() <= 0 then return end
 				local used = 0
 				for _, flow in ipairs(flows) do used = math.max(used, flow:Apply()) end
-				canvas:SetHeight(math.max(1, used))
+				if type(frame.SetContentHeight) == "function" then
+					frame:SetContentHeight(used)
+				else
+					canvas:SetHeight(math.max(1, used))
+				end
 				RGXQoLLC.panelLayout = { width = canvas:GetWidth(), height = used, columns = #flows }
 			end
 			reflow()
@@ -2811,13 +2818,13 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			tabs = { { text = L["Settings"], content = function(frame)
 				Grid(frame, {
 					function(host)
-						-- Chat: the switch is "show chat messages"; the ticks are what is said.
-						local chat = UI:CreateCard(host, { title = L["Chat"], switch = {
-							storage = RGXQoLDB, key = "chatOutput", default = true,
-						} })
-						DbTick(chat, L["Show welcome message"], "loginMessage", true)
-						Tick(chat, L["Show sale summary in chat"], "autoSellShowSummary")
-						Tick(chat, L["Show repair summary in chat"], "autoRepairShowSummary")
+						local questing = ModuleCard(host, L["Questing"], "automateQuests")
+						Tick(questing, L["Accept available quests"], "autoQuestAvailable")
+						Tick(questing, L["Accept escort quests"], "autoQuestEscort")
+						Tick(questing, L["Turn in completed quests"], "autoQuestCompleted")
+						Tick(questing, L["Automate gossip"], "automateGossip")
+						Tick(questing, L["Require override key"], "autoQuestShift")
+						Safe("override key", KeyChoice, questing, L["Override key"], "autoQuestKeyMenu")
 
 						local vendors = ModuleCard(host, L["Vendors"], "moduleVendors")
 						Tick(vendors, L["Sell junk automatically"], "autoSellJunk")
@@ -2829,16 +2836,16 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 							local button = RGXQoLLC.minimapButton
 							if button and button.SetVisible then button:SetVisible(value) end
 						end)
-						return { minimap, chat, vendors }
+						return { minimap, questing, vendors }
 					end,
 					function(host)
-						local questing = ModuleCard(host, L["Questing"], "automateQuests")
-						Tick(questing, L["Accept available quests"], "autoQuestAvailable")
-						Tick(questing, L["Accept escort quests"], "autoQuestEscort")
-						Tick(questing, L["Turn in completed quests"], "autoQuestCompleted")
-						Tick(questing, L["Automate gossip"], "automateGossip")
-						Tick(questing, L["Require override key"], "autoQuestShift")
-						Safe("override key", KeyChoice, questing, L["Override key"], "autoQuestKeyMenu")
+						-- Balance the longer Party/death card with the short Chat card.
+						local chat = UI:CreateCard(host, { title = L["Chat"], switch = {
+							storage = RGXQoLDB, key = "chatOutput", default = true,
+						} })
+						DbTick(chat, L["Show welcome message"], "loginMessage", true)
+						Tick(chat, L["Show sale summary in chat"], "autoSellShowSummary")
+						Tick(chat, L["Show repair summary in chat"], "autoRepairShowSummary")
 
 						local party = ModuleCard(host, L["Party and death"], "moduleParty")
 						Tick(party, L["Accept summon"], "autoAcceptSummon")
@@ -2849,7 +2856,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Tick(party, L["Accept spirit healer resurrection"], "autoSpiritRes")
 						Tick(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
 						Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
-						return { questing, party }
+						return { chat, party }
 					end,
 				})
 			end },

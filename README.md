@@ -24,7 +24,9 @@ the Questing card to be on. The override key still pauses automation, and
 unrelated consequential-NPC exclusions remain in place. Escort detection uses
 the addon's existing NPC exclusion list, not a universal quest-type classifier.
 
-The Minimap card is first in the left column, above Chat and Vendors.
+The left column contains Minimap, Questing, and Vendors; the right column
+contains Chat and Party and death. Automation edits update SavedVariables
+immediately instead of depending solely on a logout callback.
 
 **Accept spirit healer resurrection** belongs to **Party and death**, not
 Questing. It selects the standard, client-localized Spirit Healer's single

@@ -62,10 +62,10 @@ setfenv(chunk, env); chunk()
 addon:BuildOptionsCanvas()
 assert(panelOpts and #columns == 2, "real options content built")
 assert(#columns[1].cards == 3 and columns[1].cards[1].title == "Minimap"
-    and columns[1].cards[2].title == "Chat" and columns[1].cards[3].title == "Vendors",
-    "left column is Minimap, Chat, Vendors")
-assert(#columns[2].cards == 2 and columns[2].cards[1].title == "Questing"
-    and columns[2].cards[2].title == "Party and death", "right column stays unchanged")
+    and columns[1].cards[2].title == "Questing" and columns[1].cards[3].title == "Vendors",
+    "left column is Minimap, Questing, Vendors")
+assert(#columns[2].cards == 2 and columns[2].cards[1].title == "Chat"
+    and columns[2].cards[2].title == "Party and death", "right column balances Chat with Party and death")
 local escort = assert(controls.autoQuestEscort, "escort tick box is present")
 assert(escort.label == "Accept escort quests" and escort.opts.default == false, "explicit opt-in checkbox")
 escort.opts.onChange(true)

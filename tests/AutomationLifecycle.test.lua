@@ -22,6 +22,8 @@ local function boot(loadedName, saved)
     function Frame:Show() self.shown = true end
     function Frame:Hide() self.shown = false end
     function Frame:IsShown() return self.shown == true end
+    function Frame:SetChecked(value) self.checked = value end
+    function Frame:GetChecked() return self.checked end
     local function frame()
         return setmetatable({ scripts = {}, events = {} }, {
             __index = function(_, key) return Frame[key] or noop end,
@@ -80,6 +82,8 @@ local function boot(loadedName, saved)
         API = { CanAccessValue = function() return true end, CanAccessTable = function() return true end },
         GetMinimap = function() return nil end,
         GetAuras = function() return {} end,
+        GetDesign = function() return nil end,
+        RegisterModule = noop,
     }
     env.RGXFramework = RGX
     local function load(text, path, ...)
@@ -114,6 +118,7 @@ local function boot(loadedName, saved)
         selected = function() return selected end,
         quests = function(value) available = value end,
         shift = function(value) shift = value end,
+        load = load,
     }
 end
 
@@ -195,5 +200,29 @@ scenario("escort acceptance is opt-in and preserves other quest guards", functio
     reload.change("autoQuestEscort", false); reload.fire("QUEST_DETAIL")
     check(reload.accepted() == 1, "disabling immediately restores manual escorts")
     check(#test.errors == 0 and #reload.errors == 0, "escort paths report no callback errors")
+end)
+scenario("real checkbox changes survive a fresh load without a logout callback", function()
+    local test = boot("RGXQoL")
+    local UI = {}
+    test.load(read(frameworkPath .. "/libraries/ui/controls.lua"), "real-controls.lua", "RGX-Framework", UI)
+    local storage = {}
+    local row = UI:CreateCheckbox(test.env.UIParent, "Accept escort quests", {
+        storage = storage, key = "autoQuestEscort", default = false,
+        onChange = function(value) test.change("autoQuestEscort", value) end,
+    })
+    row.checkbox:SetChecked(true)
+    row.checkbox.scripts.OnClick(row.checkbox)
+    check(storage.autoQuestEscort == true and test.addon.AutoQuestEscort == "On", "real framework checkbox reaches runtime")
+    check(test.env.RGXQoLDB.AutoQuestEscort == "On", "changes go directly to SavedVariables, not only to a logout-time mirror")
+    test.change("moduleParty", false)
+    test.change("autoReleaseDelay", 1750)
+    test.change("autoQuestKeyMenu", 3)
+    local saved = {}
+    for key, value in pairs(test.env.RGXQoLDB) do saved[key] = value end
+    local reload = boot("RGXQoL", saved)
+    check(reload.addon.AutoQuestEscort == "On" and reload.addon.ModuleParty == "Off"
+        and reload.addon.AutoReleaseDelay == 1750 and reload.addon.AutoQuestKeyMenu == 3,
+        "checkbox, module, slider and key selection survive a new load without PLAYER_LOGOUT")
+    check(#test.errors == 0 and #reload.errors == 0, "reload has no callback errors")
 end)
 print("AutomationLifecycle OK " .. passed .. " scenarios")
