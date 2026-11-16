@@ -18,6 +18,14 @@ automatically. **Require override key** reverses the selected key's behavior:
 when enabled, hold the key to automate; otherwise, hold it to pause automation.
 Quest exclusions and item/gold requirements still apply.
 
+**Accept escort quests** opts into accepting the previously excluded escort-NPC
+offers. It is off by default and also requires **Accept available quests** and
+the Questing card to be on. The override key still pauses automation, and
+unrelated consequential-NPC exclusions remain in place. Escort detection uses
+the addon's existing NPC exclusion list, not a universal quest-type classifier.
+
+The Minimap card is first in the left column, above Chat and Vendors.
+
 **Accept spirit healer resurrection** belongs to **Party and death**, not
 Questing. It selects the standard, client-localized Spirit Healer's single
 gossip choice and then accepts the resurrection confirmation, including its

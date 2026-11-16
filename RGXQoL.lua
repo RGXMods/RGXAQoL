@@ -553,7 +553,7 @@
 							return true
 						end
 						-- Ignore specific NPCs for accepting quests only
-						if actionType == "Accept" then
+						if actionType == "Accept" and RGXQoLLC["AutoQuestEscort"] ~= "On" then
 							-- Escort quests
 							if npcID == "467" -- The Defias Traitor (The Defias Brotherhood)
 							or npcID == "349" -- Corporal Keeshan (Missing In Action)
@@ -1442,6 +1442,7 @@ local function eventHandler(event, arg1, arg2, ...)
 				RGXQoLLC:LoadVarChk("AutomateQuests", "Off")				-- Automate quests
 				RGXQoLLC:LoadVarChk("AutoQuestShift", "Off")				-- Automate quests requires shift
 				RGXQoLLC:LoadVarChk("AutoQuestAvailable", "On")			-- Accept available quests
+				RGXQoLLC:LoadVarChk("AutoQuestEscort", "Off")			-- Escort acceptance is explicit opt-in
 				RGXQoLLC:LoadVarChk("AutoQuestCompleted", "On")			-- Turn-in completed quests
 				RGXQoLLC:LoadVarNum("AutoQuestKeyMenu", 1, 1, 4)			-- Automate quests override key
 				RGXQoLLC:LoadVarChk("AutomateGossip", "Off")				-- Automate gossip
@@ -1494,6 +1495,7 @@ local function eventHandler(event, arg1, arg2, ...)
 			RGXQoLDB["AutomateQuests"]			= RGXQoLLC["AutomateQuests"]
 			RGXQoLDB["AutoQuestShift"]			= RGXQoLLC["AutoQuestShift"]
 			RGXQoLDB["AutoQuestAvailable"]		= RGXQoLLC["AutoQuestAvailable"]
+			RGXQoLDB["AutoQuestEscort"]			= RGXQoLLC["AutoQuestEscort"]
 			RGXQoLDB["AutoQuestCompleted"]		= RGXQoLLC["AutoQuestCompleted"]
 			RGXQoLDB["AutoQuestKeyMenu"]		= RGXQoLLC["AutoQuestKeyMenu"]
 			RGXQoLDB["AutomateGossip"]			= RGXQoLLC["AutomateGossip"]
@@ -2518,6 +2520,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				RGXQoLDB["AutomateQuests"] = "On"				-- Automate quests
 				RGXQoLDB["AutoQuestShift"] = "Off"				-- Automate quests requires shift
 				RGXQoLDB["AutoQuestAvailable"] = "On"			-- Accept available quests
+				RGXQoLDB["AutoQuestEscort"] = "Off"			-- Keep escort quests manual by default
 				RGXQoLDB["AutoQuestCompleted"] = "On"			-- Turn-in completed quests
 				RGXQoLDB["AutoQuestKeyMenu"] = 1				-- Automate quests override key
 				RGXQoLDB["AutomateGossip"] = "On"				-- Automate gossip
@@ -2600,6 +2603,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		moduleParty           = "ModuleParty",
 		automateQuests        = "AutomateQuests",
 		autoQuestAvailable    = "AutoQuestAvailable",
+		autoQuestEscort       = "AutoQuestEscort",
 		autoQuestCompleted    = "AutoQuestCompleted",
 		autoQuestShift        = "AutoQuestShift",
 		autoQuestKeyMenu      = "AutoQuestKeyMenu",
@@ -2825,11 +2829,12 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 							local button = RGXQoLLC.minimapButton
 							if button and button.SetVisible then button:SetVisible(value) end
 						end)
-						return { chat, vendors, minimap }
+						return { minimap, chat, vendors }
 					end,
 					function(host)
 						local questing = ModuleCard(host, L["Questing"], "automateQuests")
 						Tick(questing, L["Accept available quests"], "autoQuestAvailable")
+						Tick(questing, L["Accept escort quests"], "autoQuestEscort")
 						Tick(questing, L["Turn in completed quests"], "autoQuestCompleted")
 						Tick(questing, L["Automate gossip"], "automateGossip")
 						Tick(questing, L["Require override key"], "autoQuestShift")
