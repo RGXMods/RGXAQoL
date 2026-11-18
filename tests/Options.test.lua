@@ -1,5 +1,5 @@
 -- AQoL options: the panel opens from the minimap button and /qol, the brand is the RGX pair, and the
--- panel is two tabs of two-column card grids. Run from the repository root: luajit tests/Options.test.lua
+-- panel is one page of five cards in two columns. Run from the repository root: luajit tests/Options.test.lua
 local function check(c, m) if not c then error("CHECK FAILED: " .. m, 2) end end
 local function read(p) local f = assert(io.open(p)); local s = f:read("*a"); f:close(); return s end
 local src = read("RGXQoL.lua")
@@ -29,7 +29,7 @@ check(src:find('BRAND_STYLE = "materialround"', 1, true), "the panel uses the Ma
 check(src:find('"|cff8B1538RGX|r |cffffffff|||r |cffffffffAQoL|r"', 1, true), "the title escapes its pipe (|||r)")
 check(not src:find("QoL Plus", 1, true), "no leftover QoL Plus branding")
 
--- 3. Layout: one page of four cards in two framework columns; the General card is the framework's standard card.
+-- 3. Layout: one page of five cards in two framework columns.
 local _, tabs = src:gsub("content = function%(frame%)", "")
 check(tabs == 1 and src:find("tabs = { { text = L[\"Settings\"], content = function(frame)", 1, true) and not src:find("\n\t\t\tcontent = function(frame)", 1, true), "the page is a one-tab panel, not the tab-less content form (" .. tabs .. ")")
 check(src:find("Grid(frame, {", 1, true) and src:find("UI:CreateColumns(canvas, #builders)", 1, true), "the page is a two-column card grid")
@@ -40,7 +40,7 @@ check(src:find("local function ModuleCard(host, title, bkey)", 1, true), "module
 check(src:find("UI:CreateCard(host, { title = L[\"Chat\"], switch", 1, true) and src:find('ModuleCard(host, L["Vendors"], "moduleVendors")', 1, true) and src:find('ModuleCard(host, L["Questing"], "automateQuests")', 1, true) and src:find('ModuleCard(host, L["Party and death"], "moduleParty")', 1, true) and src:find('UI:CreateCard(host, { title = L["Minimap"] })', 1, true) and not src:find('title = L["Minimap"], switch', 1, true), "Chat, Vendors, Questing and Party and death each have a header switch")
 check(not src:find("UI:CreateSwitch(card.content", 1, true) and not src:find("local function Toggle(card", 1, true), "no switches inside cards: options are tick boxes")
 local ticks = select(2, src:gsub("\n%s+Tick%(", "\n")) + select(2, src:gsub("\n%s+DbTick%(", "\n"))
-check(ticks == 17, "17 tick boxes across the cards (" .. ticks .. ")")
+check(ticks == 18, "18 tick boxes across the cards, including escort opt-in (" .. ticks .. ")")
 check(src:find("KeyChoice, questing", 1, true) and not src:find("CreateNestedDropdown", 1, true) and not src:find('Slider(questing', 1, true), "the override key is one compact button, not a dropdown or slider")
 check(src:find("RGX.CreateChat and RGX:CreateChat", 1, true) and src:find("self.chat:Print", 1, true), "chat goes through RGX:CreateChat")
 
@@ -57,7 +57,7 @@ check(io.open("media/icon.tga") == nil and io.open("RGXQoL.blp") == nil, "AQoL s
 local fwMaj, fwMin = toc:match("X%-RGX%-Framework%-MinVersion: (%d+)%.(%d+)")
 check(fwMaj and (tonumber(fwMaj) > 2 or (tonumber(fwMaj) == 2 and tonumber(fwMin) >= 19)), "the TOC requires the framework that has card header switches, bound tick boxes and the brand API (2.19.0 or newer)")
 
--- 5. Card headers carry no subtext, the chat prefix is not an option, and General comes first.
+-- 5. Card headers carry no subtext; the chat prefix is not an option.
 check(not src:find("Text(vendors", 1, true) and not src:find("Text(party", 1, true) and not src:find("gossip and the override key", 1, true), "no description line under a card header")
 check(not src:find("UI:CreateStandardCard(host", 1, true), "no chat prefix box: the standard card is not used")
 check(src:find('label = "AQoL"', 1, true), "chat uses the [AQoL] label")

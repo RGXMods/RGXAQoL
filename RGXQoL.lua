@@ -13,7 +13,7 @@
 	_G.RGXQoLDB = _G.RGXQoLDB or {}
 
 	-- Create locals
-	-- Create locals
+	local addonName, RGXQoLAddon = ...
 	local RGXQoLLC = {}
 	local RGX = assert(_G.RGXFramework, "RGX-Framework is required")
 	RGXQoLLC.FeatureSetup = {}          -- option -> setup hook, wired from feature blocks
@@ -140,7 +140,6 @@
 	RGXQoLLC["AddonVer"] = "2.0.0"
 
 	-- Get locale table
-	local void, RGXQoLAddon = ...
 	local L = RGXQoLAddon.L
 
 	-- Check Wow version is valid
@@ -465,6 +464,8 @@
 
 			-- Event handler (dispatched via RGX:RegisterEvent, pcall-isolated)
 			local function OnGossipShow(event)
+				-- Resurrection gossip belongs to its own explicitly enabled feature.
+				if UnitIsGhost("player") then return end
 				-- Special treatment for specific NPCs
 				local npcGuid = UnitGUID("npc") or nil
 				if npcGuid and not IsShiftKeyDown() then
@@ -552,7 +553,7 @@
 							return true
 						end
 						-- Ignore specific NPCs for accepting quests only
-						if actionType == "Accept" then
+						if actionType == "Accept" and RGXQoLLC["AutoQuestEscort"] ~= "On" then
 							-- Escort quests
 							if npcID == "467" -- The Defias Traitor (The Defias Brotherhood)
 							or npcID == "349" -- Corporal Keeshan (Missing In Action)
@@ -921,7 +922,7 @@
 							if RGXQoLLC["AutoQuestAvailable"] == "On" then
 								local GossipQuests = C_GossipInfo.GetAvailableQuests()
 								for titleIndex, questInfo in ipairs(GossipQuests) do
-									if questInfo.questID and DoesQuestHaveRequirementsMet(questInfo.questID) then
+									if questInfo.questID and DoesQuestHaveRequirementsMet(questInfo.title) then
 										return C_GossipInfo.SelectAvailableQuest(questInfo.questID)
 									end
 								end
@@ -1296,12 +1297,41 @@
 
 		do
 
+			-- This option owns the initial spirit-healer gossip as well as the
+			-- confirmation. It must not depend on the Questing/generic-gossip card.
+			local function OnSpiritHealerGossip()
+				if not RGXQoLLC:On("AutoSpiritRes") or IsShiftKeyDown() or not UnitIsGhost("player") then return end
+				-- The client's localized healer label identifies the standard NPC.
+				-- Never select arbitrary ghost gossip or guess from English menu text.
+				if type(SPIRIT_HEALER_RELEASE_RED) ~= "string" then return end
+				local healerName = SPIRIT_HEALER_RELEASE_RED:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")
+				if UnitName("npc") ~= healerName then return end
+				local options = RGX.API.GetGossipOptions()
+				if type(options) ~= "table" or #options ~= 1 then return end
+				local option = options[1]
+				if type(option.orderIndex) == "number" and C_GossipInfo and type(C_GossipInfo.SelectOptionByIndex) == "function" then
+					C_GossipInfo.SelectOptionByIndex(option.orderIndex)
+				elseif type(option.gossipOptionID) == "number" and C_GossipInfo and type(C_GossipInfo.SelectOption) == "function" then
+					C_GossipInfo.SelectOption(option.gossipOptionID)
+				end
+			end
+			local function SetupSpiritHealerEvents()
+				if RGXQoLLC:On("AutoSpiritRes") then
+					RGX:RegisterEvent("GOSSIP_SHOW", OnSpiritHealerGossip, "RGXQoL_SpiritHealer")
+				else
+					RGX:UnregisterEvent("GOSSIP_SHOW", "RGXQoL_SpiritHealer")
+				end
+			end
+			RGXQoLLC.FeatureSetup.AutoSpiritRes = SetupSpiritHealerEvents
+			SetupSpiritHealerEvents()
+
 			-- The spirit healer's resurrection prompt (with or without resurrection sickness): accept it after a
 			-- short moment, unless the override key (shift) is held. Gated by the Party and death switch.
 			-- With resurrection sickness the prompt carries its duration and the first Accept only asks again,
 			-- so that second prompt is accepted too.
 			local SPIRIT_HEALER_DIALOGS = { XP_LOSS = true, XP_LOSS_NO_SICKNESS = true, XP_LOSS_NO_SICKNESS_NO_DURABILITY = true }
 			local function Accept(sType, again)
+				if not RGXQoLLC:On("AutoSpiritRes") then return end
 				local dialog = StaticPopup_Visible(sType)
 				if not dialog then return end
 				if IsShiftKeyDown() then
@@ -1397,7 +1427,7 @@ local function eventHandler(event, arg1, arg2, ...)
 		----------------------------------------------------------------------
 
 		if event == "ADDON_LOADED" then
-			if arg1 == "RGXQoL" then
+			if arg1 == addonName then
 
 				-- Replace old var names with new ones
 				local function UpdateVars(oldvar, newvar)
@@ -1412,6 +1442,7 @@ local function eventHandler(event, arg1, arg2, ...)
 				RGXQoLLC:LoadVarChk("AutomateQuests", "Off")				-- Automate quests
 				RGXQoLLC:LoadVarChk("AutoQuestShift", "Off")				-- Automate quests requires shift
 				RGXQoLLC:LoadVarChk("AutoQuestAvailable", "On")			-- Accept available quests
+				RGXQoLLC:LoadVarChk("AutoQuestEscort", "Off")			-- Escort acceptance is explicit opt-in
 				RGXQoLLC:LoadVarChk("AutoQuestCompleted", "On")			-- Turn-in completed quests
 				RGXQoLLC:LoadVarNum("AutoQuestKeyMenu", 1, 1, 4)			-- Automate quests override key
 				RGXQoLLC:LoadVarChk("AutomateGossip", "Off")				-- Automate gossip
@@ -1464,6 +1495,7 @@ local function eventHandler(event, arg1, arg2, ...)
 			RGXQoLDB["AutomateQuests"]			= RGXQoLLC["AutomateQuests"]
 			RGXQoLDB["AutoQuestShift"]			= RGXQoLLC["AutoQuestShift"]
 			RGXQoLDB["AutoQuestAvailable"]		= RGXQoLLC["AutoQuestAvailable"]
+			RGXQoLDB["AutoQuestEscort"]			= RGXQoLLC["AutoQuestEscort"]
 			RGXQoLDB["AutoQuestCompleted"]		= RGXQoLLC["AutoQuestCompleted"]
 			RGXQoLDB["AutoQuestKeyMenu"]		= RGXQoLLC["AutoQuestKeyMenu"]
 			RGXQoLDB["AutomateGossip"]			= RGXQoLLC["AutomateGossip"]
@@ -1533,7 +1565,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 ----------------------------------------------------------------------
 	function RGXQoLLC:GetAddonVersion()
 		if C_AddOns and C_AddOns.GetAddOnMetadata then
-			local ok, v = pcall(C_AddOns.GetAddOnMetadata, "RGXQoL", "Version")
+			local ok, v = pcall(C_AddOns.GetAddOnMetadata, addonName, "Version")
 			if ok and v and v ~= "" then return v end
 		end
 		return RGXQoLLC["AddonVer"]
@@ -2488,6 +2520,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				RGXQoLDB["AutomateQuests"] = "On"				-- Automate quests
 				RGXQoLDB["AutoQuestShift"] = "Off"				-- Automate quests requires shift
 				RGXQoLDB["AutoQuestAvailable"] = "On"			-- Accept available quests
+				RGXQoLDB["AutoQuestEscort"] = "Off"			-- Keep escort quests manual by default
 				RGXQoLDB["AutoQuestCompleted"] = "On"			-- Turn-in completed quests
 				RGXQoLDB["AutoQuestKeyMenu"] = 1				-- Automate quests override key
 				RGXQoLDB["AutomateGossip"] = "On"				-- Automate gossip
@@ -2570,6 +2603,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		moduleParty           = "ModuleParty",
 		automateQuests        = "AutomateQuests",
 		autoQuestAvailable    = "AutoQuestAvailable",
+		autoQuestEscort       = "AutoQuestEscort",
 		autoQuestCompleted    = "AutoQuestCompleted",
 		autoQuestShift        = "AutoQuestShift",
 		autoQuestKeyMenu      = "AutoQuestKeyMenu",
@@ -2614,6 +2648,9 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 		else
 			RGXQoLLC[legacy] = value and "On" or "Off"
 		end
+		-- Settings are durable as soon as the framework control changes them.
+		-- Logout remains a compatibility flush, not the sole save opportunity.
+		RGXQoLDB[legacy] = RGXQoLLC[legacy]
 		local setup = RGXQoLLC.FeatureSetup and RGXQoLLC.FeatureSetup[legacy]
 		if setup then setup() end
 		-- A module switch re-applies every feature in its card (events register or unregister now).
@@ -2743,7 +2780,11 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 				if canvas:GetWidth() <= 0 then return end
 				local used = 0
 				for _, flow in ipairs(flows) do used = math.max(used, flow:Apply()) end
-				canvas:SetHeight(math.max(1, used))
+				if type(frame.SetContentHeight) == "function" then
+					frame:SetContentHeight(used)
+				else
+					canvas:SetHeight(math.max(1, used))
+				end
 				RGXQoLLC.panelLayout = { width = canvas:GetWidth(), height = used, columns = #flows }
 			end
 			reflow()
@@ -2777,13 +2818,13 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 			tabs = { { text = L["Settings"], content = function(frame)
 				Grid(frame, {
 					function(host)
-						-- Chat: the switch is "show chat messages"; the ticks are what is said.
-						local chat = UI:CreateCard(host, { title = L["Chat"], switch = {
-							storage = RGXQoLDB, key = "chatOutput", default = true,
-						} })
-						DbTick(chat, L["Show welcome message"], "loginMessage", true)
-						Tick(chat, L["Show sale summary in chat"], "autoSellShowSummary")
-						Tick(chat, L["Show repair summary in chat"], "autoRepairShowSummary")
+						local questing = ModuleCard(host, L["Questing"], "automateQuests")
+						Tick(questing, L["Accept available quests"], "autoQuestAvailable")
+						Tick(questing, L["Accept escort quests"], "autoQuestEscort")
+						Tick(questing, L["Turn in completed quests"], "autoQuestCompleted")
+						Tick(questing, L["Automate gossip"], "automateGossip")
+						Tick(questing, L["Require override key"], "autoQuestShift")
+						Safe("override key", KeyChoice, questing, L["Override key"], "autoQuestKeyMenu")
 
 						local vendors = ModuleCard(host, L["Vendors"], "moduleVendors")
 						Tick(vendors, L["Sell junk automatically"], "autoSellJunk")
@@ -2795,15 +2836,16 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 							local button = RGXQoLLC.minimapButton
 							if button and button.SetVisible then button:SetVisible(value) end
 						end)
-						return { chat, vendors, minimap }
+						return { minimap, questing, vendors }
 					end,
 					function(host)
-						local questing = ModuleCard(host, L["Questing"], "automateQuests")
-						Tick(questing, L["Accept available quests"], "autoQuestAvailable")
-						Tick(questing, L["Turn in completed quests"], "autoQuestCompleted")
-						Tick(questing, L["Automate gossip"], "automateGossip")
-						Tick(questing, L["Require override key"], "autoQuestShift")
-						Safe("override key", KeyChoice, questing, L["Override key"], "autoQuestKeyMenu")
+						-- Balance the longer Party/death card with the short Chat card.
+						local chat = UI:CreateCard(host, { title = L["Chat"], switch = {
+							storage = RGXQoLDB, key = "chatOutput", default = true,
+						} })
+						DbTick(chat, L["Show welcome message"], "loginMessage", true)
+						Tick(chat, L["Show sale summary in chat"], "autoSellShowSummary")
+						Tick(chat, L["Show repair summary in chat"], "autoRepairShowSummary")
 
 						local party = ModuleCard(host, L["Party and death"], "moduleParty")
 						Tick(party, L["Accept summon"], "autoAcceptSummon")
@@ -2814,7 +2856,7 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 						Tick(party, L["Accept spirit healer resurrection"], "autoSpiritRes")
 						Tick(party, L["Skip Alterac Valley"], "autoReleaseNoAlterac")
 						Slider(party, L["Release delay"], "autoReleaseDelay", 200, 3000, "ms")
-						return { questing, party }
+						return { chat, party }
 					end,
 				})
 			end },
@@ -2827,4 +2869,3 @@ RGX:RegisterEvent("PLAYER_LOGOUT", eventHandler, "RGXQoL_PlayerLogout")
 
 
 	end
-
