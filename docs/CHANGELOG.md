@@ -2,6 +2,11 @@
 
 ## 2.1.26
 
+- The spirit healer automation completes the whole visit: it picks the spirit healer's single gossip choice, then accepts the resurrection and its second resurrection-sickness confirmation. Hold Shift to cancel; other NPCs and menus with several choices stay manual.
+- New in the Questing card: **Accept escort quests** (off by default) also accepts escort quests, which were always skipped before. It needs **Accept available quests**, and the override key still pauses it.
+- Quest automation starts reliably after login and after the Questing card is switched back on.
+- Settings are saved the moment you change them, not only when you log out.
+- The settings page is one page of cards: Minimap, Questing and Vendors on the left, Chat and Party and death on the right.
 - New in the Party and death card: **Accept spirit healer resurrection**. The spirit healer's resurrection prompt is accepted automatically, including the second "are you sure" prompt that comes with resurrection sickness (hold shift to cancel). Off by default.
 - New in the Party and death card: **Release in the open world**. Releases your spirit automatically when you die outside instances; never in dungeons or raids, never when a soulstone or other self-resurrection is available or a resurrection is on offer, never for hardcore deaths, and shift cancels it. Off by default. "Release in PvP" still covers battlegrounds.
 - Automatic release waits until the release button is usable (while falling, or under an effect that holds releases) instead of trying too early.
